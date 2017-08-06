@@ -1,0 +1,147 @@
+.column {
+  height: 100vh;
+  width: 25%;
+  float: left;
+  overflow: scroll;
+}
+
+#big-wrapper {
+  margin-top: 4em;
+}
+
+.column .btn {
+  border-radius: 0;
+}
+
+.panel {
+  border-radius: 0 !important;
+  border: 0 !important;
+}
+
+#explorer {
+  background: rgba(255, 255, 255, 0.7);
+  height: 10000px;
+}
+
+#content {
+  float: right;
+  width: 75%;
+  background-color: #f7f7f7;
+}
+
+.badge {
+  float: right;
+}
+
+.float-right {
+  float: right;
+}
+
+.caret {
+  color: black;
+}
+
+.feed-link {
+  padding: 3px;
+}
+
+.confirm-dir-delete {
+  margin: 15px;
+}
+
+.navbar {
+  border-radius: 0 !important;
+}
+
+#add-category {
+  text-align: center;
+  background-color: #f7f7f7;
+  padding: 5px;
+}
+
+#add-category:hover {
+  background-color: #ccc;
+}
+
+
+#articles {
+  margin: 15px;
+  background-color: #f7f7f7;
+}
+
+.article {
+  padding: 30px;
+  border: 1px solid black;
+  margin-bottom: 15px;
+  background-color: white;
+}
+
+.article-buttons {
+  float: right;
+}
+
+.article-buttons span {
+  margin: 3px;
+}
+
+.article-buttons span:hover {
+  color: red;
+}
+
+#add-feed {
+  max-width: 500px;
+  margin-top: 2em;
+}
+
+#add-feed input {
+  margin-bottom: 8px;
+}
+
+.bordered {
+  border: 2px solid black;
+}
+
+#add-feed button {
+  margin-right: 8px;
+  margin-top: 1em;
+}
+
+.directory-title {
+  color: inherit;
+}
+
+.btn-black {
+  background: #000;
+  color: white;
+}
+
+.btn-group {
+  background-color: white !important;
+}
+
+.btn-white {
+  background: #fff !important;
+}
+
+.panel-heading a {
+  color: inherit;
+  text-decoration: none;
+}
+.panel-heading a:hover {
+  color: inherit;
+  text-decoration: none;
+}
+.panel-heading a:focus {
+  color: inherit;
+  text-decoration: none;
+}
+
+#select {
+  margin-top: 14px;
+  margin-bottom: 14px;
+}
+
+
+/* Because we like pretty things */
+.blue { background: #eef; }
+.green { background: #efe; }
