@@ -20,7 +20,7 @@
 
 #explorer {
   background: rgba(255, 255, 255, 0.7);
-  height: 10000px;
+  height: 100%;
 }
 
 #content {
@@ -51,6 +51,10 @@
 
 .navbar {
   border-radius: 0 !important;
+}
+
+.navbar-form div {
+  margin-right: 5px;
 }
 
 #add-category {
