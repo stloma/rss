@@ -36,6 +36,28 @@ function getFeeds (cb) {
     })
 }
 
+function bookmark (db, newBookmark, cb) {
+  let _id = newBookmark.objId
+  delete newBookmark.objId
+  newBookmark.bookmark = true
+
+  let bookmarkQuery = {}
+  bookmarkQuery.favorites = newBookmark
+
+  let filter = { _id: new ObjectId(_id) }
+  console.log(bookmarkQuery)
+  cb(null, filter)
+
+  rssDb.collection('feeds').update(filter, {
+    $push: bookmarkQuery
+  }, function (error, result) {
+    if (error) {
+      cb(error)
+    }
+    cb(null, result)
+  })
+}
+
 function refreshArticles (dir, name, url, id, cb) {
   const currentTime = new Date().getTime()
   let _id = new ObjectId(id)
@@ -318,4 +340,4 @@ function deleteSite (bmarkDb, _id, cb) {
 
 */
 
-export { rssDb, store, getFeeds, getCategories, refreshArticles, addFeed, addCategory, deleteCategory }
+export { bookmark, rssDb, store, getFeeds, getCategories, refreshArticles, addFeed, addCategory, deleteCategory }

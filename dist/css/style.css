@@ -1,32 +1,65 @@
-.column {
-  height: 100vh;
-  width: 25%;
-  float: left;
-  overflow: scroll;
+body {
+  padding-top: 4.2em;
 }
 
-#big-wrapper {
-  margin-top: 4em;
+.wrap {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.column {
+  width: 25%;
+  top: 63px;
+  bottom: 0px;
+  position: fixed;
 }
 
 .column .btn {
   border-radius: 0;
 }
 
-.panel {
-  border-radius: 0 !important;
-  border: 0 !important;
-}
-
-#explorer {
-  background: rgba(255, 255, 255, 0.7);
-  height: 100%;
-}
-
 #content {
   float: right;
   width: 75%;
   background-color: #f7f7f7;
+}
+
+.navbar {
+  border-radius: 0 !important;
+}
+
+.navbar-form div {
+  margin-right: 5px;
+}
+
+#articles {
+  margin: 15px;
+  background-color: #f7f7f7;
+}
+
+.article {
+  padding: 30px;
+  border: 1px solid #DCDCDC;
+  margin-bottom: 15px;
+  background-color: white;
+}
+
+.article-buttons {
+  float: right;
+}
+
+.article-buttons span {
+  margin: 3px;
+}
+
+.article-buttons span:hover {
+  color: red;
+}
+
+.panel {
+  border-radius: 0 !important;
+  border: 0 !important;
 }
 
 .badge {
@@ -49,14 +82,6 @@
   margin: 15px;
 }
 
-.navbar {
-  border-radius: 0 !important;
-}
-
-.navbar-form div {
-  margin-right: 5px;
-}
-
 #add-category {
   text-align: center;
   background-color: #f7f7f7;
@@ -65,31 +90,6 @@
 
 #add-category:hover {
   background-color: #ccc;
-}
-
-
-#articles {
-  margin: 15px;
-  background-color: #f7f7f7;
-}
-
-.article {
-  padding: 30px;
-  border: 1px solid black;
-  margin-bottom: 15px;
-  background-color: white;
-}
-
-.article-buttons {
-  float: right;
-}
-
-.article-buttons span {
-  margin: 3px;
-}
-
-.article-buttons span:hover {
-  color: red;
 }
 
 #add-feed {
@@ -103,6 +103,10 @@
 
 .bordered {
   border: 2px solid black;
+}
+
+.article-heading {
+  text-align: center;
 }
 
 #add-feed button {
@@ -145,7 +149,12 @@
   margin-bottom: 14px;
 }
 
+@media screen and (max-width: 767px) {
+  .column {
+    display: none;
+  }
+  #content {
+    width: 100%;
+  }
+}
 
-/* Because we like pretty things */
-.blue { background: #eef; }
-.green { background: #efe; }

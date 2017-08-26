@@ -2,7 +2,10 @@ import express from 'express'
 // import { ObjectId } from 'mongodb'
 
 import { ensureAuthenticated } from '../auth/passport.js'
-import { getFeeds, addFeed, addCategory, deleteCategory, refreshArticles } from '../models/db.js'
+import {
+  getFeeds, addFeed, addCategory,
+  deleteCategory, refreshArticles, bookmark
+} from '../models/db.js'
 
 const router = express.Router()
 
@@ -43,6 +46,17 @@ router.post('/editcategories', (req, res) => {
       cb(result)
     })
   }
+})
+
+router.post('/bookmark', (req, res) => {
+  const newBookmark = req.body
+
+  bookmark('rssapp', newBookmark, function (error, result) {
+    if (error) {
+      res.status(500).json({ message: `Internal Server Error: ${error}` })
+    }
+    res.status(200).json(result)
+  })
 })
 
 router.post('/articles', (req, res) => {
