@@ -31,36 +31,17 @@ function getFeeds (cb) {
       console.log('lifehacker:', feeds[0].tech[0].articles.length)
       console.log('hackernews:', feeds[0].tech[1].articles.length)
       console.log('bbc:', feeds[0].news[0].articles.length)
+      console.log('recipies:', feeds[0].recipes[0].articles.length)
       console.log('-----------------')
       cb(null, { feeds: feeds })
     })
 }
 
-function bookmark (db, newBookmark, cb) {
-  let _id = newBookmark.objId
-  delete newBookmark.objId
-  newBookmark.bookmark = true
-
-  let bookmarkQuery = {}
-  bookmarkQuery.favorites = newBookmark
-
-  let filter = { _id: new ObjectId(_id) }
-  console.log(bookmarkQuery)
-  cb(null, filter)
-
-  rssDb.collection('feeds').update(filter, {
-    $push: bookmarkQuery
-  }, function (error, result) {
-    if (error) {
-      cb(error)
-    }
-    cb(null, result)
-  })
-}
-
 function refreshArticles (dir, name, url, id, cb) {
+  // Set updated time
+  //
   const currentTime = new Date().getTime()
-  let _id = new ObjectId(id)
+  const _id = new ObjectId(id)
   rssDb.collection('feeds').update({ _id: _id }, {$set: { updated: currentTime }},
         function (error, result) {
           if (error) {
@@ -69,25 +50,26 @@ function refreshArticles (dir, name, url, id, cb) {
           }
         })
 
+  // Fetch articles
+  //
   updateFeeds(url, function (error, result) {
     if (error) console.log(error)
-    console.log('refreshing', url)
 
     // Sets up some query/filter strings
     //
-    let category = dir + '.name'
-    let filter = {
+    const category = dir + '.name'
+    const filter = {
       _id: _id
     }
     filter[category] = name
 
-    let projection = dir + '.$.'
+    const projection = dir + '.$.'
 
-    let updated = projection + 'updated'
-    let title = projection + 'title'
-    let description = projection + 'description'
-    let articles = projection + 'articles'
-    let count = projection + 'count'
+    const updated = projection + 'updated'
+    const title = projection + 'title'
+    const description = projection + 'description'
+    const articles = projection + 'articles'
+    const count = projection + 'count'
 
     // Start article cleanup
     //
@@ -105,6 +87,9 @@ function refreshArticles (dir, name, url, id, cb) {
             {$set: clearArticles},
              function (err, result) {
                if (err) throw err
+               // Is this having to filter *all* articles based on name each
+               // time?
+               //
                cb(null, result.value[dir].filter(item => item.name === name)[0].articles)
              }
           )
@@ -113,10 +98,14 @@ function refreshArticles (dir, name, url, id, cb) {
       if (err) throw err
 
       oldArticles = res
-      let mergedArticles = newArticles.concat(oldArticles)
+      let mergedArticles = [...newArticles, ...oldArticles]
+      // Sort articles by date
+      //
       mergedArticles.sort(function (a, b) {
         return new Date(b.pubdate).getTime() - new Date(a.pubdate).getTime()
       })
+      // Remove duplicate articles
+      //
       let seen = {}
       let dupFreeArticles = []
       for (let i = 0; i < mergedArticles.length; i++) {
@@ -158,6 +147,28 @@ function refreshArticles (dir, name, url, id, cb) {
         }
       })
     })
+  })
+}
+
+function bookmark (db, newBookmark, cb) {
+  let _id = newBookmark.objId
+  delete newBookmark.objId
+  newBookmark.bookmark = true
+
+  let bookmarkQuery = {}
+  bookmarkQuery.favorites = newBookmark
+
+  let filter = { _id: new ObjectId(_id) }
+  console.log(bookmarkQuery)
+  cb(null, filter)
+
+  rssDb.collection('feeds').update(filter, {
+    $push: bookmarkQuery
+  }, function (error, result) {
+    if (error) {
+      cb(error)
+    }
+    cb(null, result)
   })
 }
 

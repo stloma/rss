@@ -13,6 +13,8 @@ router.get('/protected', ensureAuthenticated, (req, res) => {
   res.status(200).json({ name: res.req.user.name })
 })
 
+// Start called by Router.jsx
+//
 router.get('/feeds', (req, res) => {
   // let userDb = req.session.passport.user
   getFeeds(function (error, result) {
@@ -21,41 +23,6 @@ router.get('/feeds', (req, res) => {
       throw error
     }
     res.json(result)
-  })
-})
-
-router.post('/editcategories', (req, res) => {
-  const { _id, name, toDelete } = req.body
-
-  function cb (result) {
-    res.status(200).send('1 record inserted')
-  }
-  if (name) {
-    addCategory('rssapp', name, _id, function (error, result) {
-      if (error) {
-        res.status(500).json({ message: `Internal Server Error: ${error}` })
-      }
-      cb(result)
-    })
-  }
-  if (toDelete) {
-    deleteCategory('rssapp', toDelete, _id, function (error, result) {
-      if (error) {
-        res.status(500).json({ message: `Internal Server Error: ${error}` })
-      }
-      cb(result)
-    })
-  }
-})
-
-router.post('/bookmark', (req, res) => {
-  const newBookmark = req.body
-
-  bookmark('rssapp', newBookmark, function (error, result) {
-    if (error) {
-      res.status(500).json({ message: `Internal Server Error: ${error}` })
-    }
-    res.status(200).json(result)
   })
 })
 
@@ -79,7 +46,54 @@ router.post('/articles', (req, res) => {
   })
   res.status(200).json({ status: 'refreshed articles' })
 })
+// End called by Router.jsx
+//
 
+// Started called by EditCategories.jsx
+//
+router.post('/editcategories', (req, res) => {
+  const { _id, name, toDelete } = req.body
+
+  function cb (result) {
+    res.status(200).send('1 record inserted')
+  }
+  if (name) {
+    addCategory('rssapp', name, _id, function (error, result) {
+      if (error) {
+        res.status(500).json({ message: `Internal Server Error: ${error}` })
+      }
+      cb(result)
+    })
+  }
+  if (toDelete) {
+    deleteCategory('rssapp', toDelete, _id, function (error, result) {
+      if (error) {
+        res.status(500).json({ message: `Internal Server Error: ${error}` })
+      }
+      cb(result)
+    })
+  }
+})
+// Started called by EditCategories.jsx
+//
+
+// Started called by Articles.jsx
+//
+router.post('/bookmark', (req, res) => {
+  const newBookmark = req.body
+
+  bookmark('rssapp', newBookmark, function (error, result) {
+    if (error) {
+      res.status(500).json({ message: `Internal Server Error: ${error}` })
+    }
+    res.status(200).json(result)
+  })
+})
+// End called by Articles.jsx
+//
+
+// Start called by NewFeed.jsx
+//
 router.post('/feeds', (req, res) => {
   // let userDb = req.session.passport.user
   const newFeed = req.body
@@ -98,6 +112,8 @@ router.post('/feeds', (req, res) => {
     res.status(200).send('1 record inserted')
   })
 })
+// End called by NewFeed.jsx
+//
 
   /*
 router.delete('/bookmarks/:id', ensureAuthenticated, (req, res) => {
