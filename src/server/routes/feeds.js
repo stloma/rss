@@ -99,6 +99,8 @@ router.post('/bookmark', (req, res) => {
 router.post('/feeds', (req, res) => {
   // let userDb = req.session.passport.user
   const newFeed = req.body
+  console.log(newFeed)
+  res.status(200).send('1 record inserted')
     /*
   const errors = validateFeed(newFeed)
   if (errors) {
@@ -107,12 +109,14 @@ router.post('/feeds', (req, res) => {
   }
   */
 
+    /*
   addFeed('rssapp', newFeed, function (error, result) {
     if (error) {
       res.status(500).json({ message: `Internal Server Error: ${error}` })
     }
     res.status(200).send('1 record inserted')
   })
+  */
 })
 // End called by NewFeed.jsx
 //

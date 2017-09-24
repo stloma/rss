@@ -28,11 +28,13 @@ MongoClient.connect('mongodb://localhost/rssapp')
 function getFeeds (cb) {
   rssDb.collection('feeds').find().toArray()
     .then(feeds => {
+      /*
       console.log('lifehacker:', feeds[0].tech[0].articles.length)
       console.log('hackernews:', feeds[0].tech[1].articles.length)
       console.log('bbc:', feeds[0].news[0].articles.length)
       console.log('recipies:', feeds[0].recipes[0].articles.length)
       console.log('-----------------')
+      */
       cb(null, { feeds: feeds })
     })
 }
