@@ -79,6 +79,7 @@ function refreshArticles (dir, name, url, id, cb) {
     // Pull & delete articles
     let clearArticles = {}
     clearArticles[articles] = []
+    console.log(filter)
 
     function cleanUp (cb) {
       rssDb.collection('feeds').findAndModify(
@@ -87,9 +88,9 @@ function refreshArticles (dir, name, url, id, cb) {
             {$set: clearArticles},
              function (err, result) {
                if (err) throw err
-               // Is this having to filter *all* articles based on name each
-               // time?
+               // Is this having to filter *all* articles based on name each time?
                //
+               result.value[dir].map(item => console.log(item.name))
                cb(null, result.value[dir].filter(item => item.name === name)[0].articles)
              }
           )
@@ -102,6 +103,10 @@ function refreshArticles (dir, name, url, id, cb) {
       // Sort articles by date
       //
       mergedArticles.sort(function (a, b) {
+        b.directory = dir
+        a.directory = dir
+        b.feed = name
+        a.feed = name
         return new Date(b.pubdate).getTime() - new Date(a.pubdate).getTime()
       })
       // Remove duplicate articles
@@ -151,7 +156,7 @@ function refreshArticles (dir, name, url, id, cb) {
 }
 
 function bookmark (db, newBookmark, cb) {
-  let _id = newBookmark.objId
+  const _id = newBookmark.objId
   delete newBookmark.objId
   newBookmark.bookmark = true
 
@@ -159,8 +164,6 @@ function bookmark (db, newBookmark, cb) {
   bookmarkQuery.favorites = newBookmark
 
   let filter = { _id: new ObjectId(_id) }
-  console.log(bookmarkQuery)
-  cb(null, filter)
 
   rssDb.collection('feeds').update(filter, {
     $push: bookmarkQuery
