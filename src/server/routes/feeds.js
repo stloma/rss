@@ -17,7 +17,8 @@ router.get('/protected', ensureAuthenticated, (req, res) => {
 //
 router.get('/feeds', (req, res) => {
   // let userDb = req.session.passport.user
-  getFeeds(function (error, result) {
+  let userDb = 'user1'
+  getFeeds(userDb, function (error, result) {
     if (error) {
       res.status(500).json({ message: `Internal Server Error: ${error}` })
       throw error
@@ -27,16 +28,18 @@ router.get('/feeds', (req, res) => {
 })
 
 router.post('/articles', (req, res) => {
-  const { name, url, dir, _id } = req.body
+  const { name, url, category, } = req.body
+  // let userDb = req.session.passport.user
+  let userDb = 'user1'
 
   let promise = new Promise(function (resolve, reject) {
-    refreshArticles(dir, name, url, _id, function (error, result) {
+    refreshArticles(userDb, category, name, url, function (error, result) {
       if (error) reject(error)
       resolve(result)
     })
   })
   promise.then(function (data) {
-    getFeeds(function (error, result) {
+    getFeeds(userDb, function (error, result) {
       if (error) {
         res.status(500).json({ message: `Internal Server Error: ${error}` })
         throw error
@@ -53,12 +56,13 @@ router.post('/articles', (req, res) => {
 //
 router.post('/editcategories', (req, res) => {
   const { _id, name, toDelete } = req.body
+  const userDb = 'user1'
 
   function cb (result) {
     res.status(200).send('1 record inserted')
   }
   if (name) {
-    addCategory('rssapp', name, _id, function (error, result) {
+    addCategory(userDb, name, _id, function (error, result) {
       if (error) {
         res.status(500).json({ message: `Internal Server Error: ${error}` })
       }
@@ -98,8 +102,9 @@ router.post('/bookmark', (req, res) => {
 //
 router.post('/feeds', (req, res) => {
   // let userDb = req.session.passport.user
+  const userDb = 'user1'
   const newFeed = req.body
-  console.log(newFeed)
+
   res.status(200).send('1 record inserted')
     /*
   const errors = validateFeed(newFeed)
@@ -109,14 +114,13 @@ router.post('/feeds', (req, res) => {
   }
   */
 
-    /*
-  addFeed('rssapp', newFeed, function (error, result) {
+  // addFeed('rssapp', newFeed, function (error, result) {
+  addFeed(userDb, newFeed, function (error, result) {
     if (error) {
       res.status(500).json({ message: `Internal Server Error: ${error}` })
     }
     res.status(200).send('1 record inserted')
   })
-  */
 })
 // End called by NewFeed.jsx
 //

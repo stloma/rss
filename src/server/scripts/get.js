@@ -2,7 +2,7 @@ var FeedMe = require('feedme')
 var http = require('http')
 var https = require('https')
 
-function updateFeeds (url, cb) {
+function fetchFeeds (url, cb) {
   if (url.startsWith('https:')) {
     https.get(url, function (res) {
       var parser = new FeedMe(true)
@@ -35,4 +35,4 @@ updateFeeds('http://127.0.0.1/rss/lifehacker.rss', function (err, res) {
  * https://news.ycombinator.com/rss
 */
 
-export { updateFeeds }
+export { fetchFeeds }

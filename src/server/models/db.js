@@ -1,7 +1,7 @@
 import session from 'express-session'
 import { MongoClient, ObjectId } from 'mongodb'
 import connectMongo from 'connect-mongodb-session'
-import { updateFeeds } from '../scripts/get.js'
+import { fetchFeeds } from '../scripts/get.js'
 
 const MongoDBStore = connectMongo(session)
 
@@ -25,40 +25,71 @@ MongoClient.connect('mongodb://localhost/rssapp')
     console.log('ERROR: ', error)
   })
 
-function getFeeds (cb) {
-  rssDb.collection('feeds').find().toArray()
+function getFeeds (userDb, cb) {
+  let finalResult = ''
+  rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, slug: 0 })
+    // Get main data document; create it if it doesn't exist
+    .then(data => {
+      if (data !== null) {
+        return data
+      } else {
+        rssDb.collection(userDb).insert({
+          slug: 'data', categories: {}, metadata: { updated: new Date() }
+        })
+        .then(getFeeds(userDb, cb))
+        .catch(error => console.log(`Error creating database: ${error}`))
+      }
+    })
+    // Get category documents
+    .then(data => {
+      finalResult = data
+      const ids = []
+      const categories = data.categories
+      for (let id in categories) {
+        ids.push(categories[id])
+      }
+      let categoryIds = ids.map(id => ObjectId(id))
+      return rssDb.collection(userDb).find({ _id: { $in: categoryIds } }, { _id: 0 }).toArray()
+    })
+    // Add category documents to main data document and return
     .then(feeds => {
-      /*
-      console.log('lifehacker:', feeds[0].tech[0].articles.length)
-      console.log('hackernews:', feeds[0].tech[1].articles.length)
-      console.log('bbc:', feeds[0].news[0].articles.length)
-      console.log('recipies:', feeds[0].recipes[0].articles.length)
-      console.log('-----------------')
-      */
-      cb(null, { feeds: feeds })
+      finalResult.feeds = feeds
+      cb(null, { data: finalResult })
     })
 }
 
-function refreshArticles (dir, name, url, id, cb) {
-  // Set updated time
-  //
-  const currentTime = new Date().getTime()
-  const _id = new ObjectId(id)
-  rssDb.collection('feeds').update({ _id: _id }, {$set: { updated: currentTime }},
-        function (error, result) {
-          if (error) {
-            console.log(error)
-          } else {
-          }
-        })
+function refreshArticles (userDb, category, name, url, cb) {
 
-  // Fetch articles
-  //
-  updateFeeds(url, function (error, result) {
-    if (error) console.log(error)
+  const currentTime = new Date()
+  rssDb.collection(userDb).update({ slug: 'data' }, {$set: { 'metadata.updated': currentTime }})
+    .catch(error => console.log(`Error updating time: ${error}`))
+
+  let _id = ''
+  rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, slug: 0 })
+    .then(result => result.categories[category])
+    .then(id => { _id = new ObjectId(id) })
+    .catch(error => console.log(`Error getting id for ${name}: ${error}`))
+
+  let fetchPromise = new Promise((resolve, reject) => {
+    fetchFeeds(url, function (error, result) {
+      if (error) reject(error)
+      resolve(result)
+    })
+  })
+
+  fetchPromise
+    .then(feedData => {
+      const articles = feedData.items
+      delete feedData.items
+      rssDb.collection(userDb).update({ _id: _id }, { $set: { [`${name}.metadata`]: feedData } })
+        .catch(error => console.log(`Error updating ${name} metadata: ${error}`))
+      rssDb.collection(userDb).update({ _id: _id }, { $set: { [`${name}.articles`]: articles } })
+        .catch(error => console.log(`Error updating ${name} articles: ${error}`))
+    })
 
     // Sets up some query/filter strings
     //
+      /*
     const category = dir + '.name'
     const filter = {
       _id: _id
@@ -81,7 +112,6 @@ function refreshArticles (dir, name, url, id, cb) {
     // Pull & delete articles
     let clearArticles = {}
     clearArticles[articles] = []
-    console.log(filter)
 
     function cleanUp (cb) {
       rssDb.collection('feeds').findAndModify(
@@ -155,6 +185,7 @@ function refreshArticles (dir, name, url, id, cb) {
       })
     })
   })
+    */
 }
 
 function bookmark (db, newBookmark, cb) {
@@ -184,38 +215,29 @@ function getCategories (cb) {
     })
 }
 
-function addFeed (dbname, feed, cb) {
-  const _id = new ObjectId(feed._id)
+function addFeed (userDb, feed, cb) {
   const { category, name, url } = feed
-  let id = category.concat(name, url).split('').map(i => i.charCodeAt(0)).join('')
-  id = id + Math.floor((Math.random() * 1000) + 1)
-  console.log(_id)
+  // let feedName = name
+  let update = { [`categories.${category}`]: 1 }
 
-  let query = {}
-  query[category] = {
-    name: name,
-    url: url,
-    id: id
-  }
-
-  rssDb.collection('feeds').update({ _id: _id }, {
-    $push: query
-  }, function (error, result) {
-    if (error) {
-      cb(error)
-    } else {
-      cb(null, result)
-    }
-  })
+  rssDb.collection(userDb).findOne({ slug: 'data' }, update)
+    .then(result => {
+      rssDb.collection(userDb).update(
+      { _id: result.categories[category] },
+      { $set: { [name]: { articles: [], url: url, category: category, updated: new Date() } } }
+    )
+    })
+    .catch(error => console.log(error))
 }
 
-function addCategory (dbname, category, _id, cb) {
-  const id = new ObjectId(_id)
+function addCategory (userDb, category, _id, cb) {
+  const reference = new ObjectId()
 
-  let addCategory = {}
-  addCategory[category] = []
+  let addCategory = { [`categories.${category}`]: reference }
 
-  rssDb.collection('feeds').update({ _id: id }, {
+  rssDb.collection(userDb).insert({ _id: reference, name: category })
+
+  rssDb.collection(userDb).update({ slug: 'data' }, {
     $set: addCategory
   },
    function (err, result) {
