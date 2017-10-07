@@ -22,7 +22,7 @@ MongoClient.connect('mongodb://localhost/rssapp')
     rssDb = connection
   })
   .catch(error => {
-    console.log('ERROR: ', error)
+    console.log(`Error connection to db: ${error}`)
   })
 
 function getFeeds (userDb, cb) {
@@ -59,7 +59,6 @@ function getFeeds (userDb, cb) {
 }
 
 function refreshArticles (userDb, category, name, url, cb) {
-
   const currentTime = new Date()
   rssDb.collection(userDb).update({ slug: 'data' }, {$set: { 'metadata.updated': currentTime }})
     .catch(error => console.log(`Error updating time: ${error}`))
