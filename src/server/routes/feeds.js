@@ -85,13 +85,13 @@ router.post('/editcategories', (req, res) => {
 //
 router.post('/bookmark', (req, res) => {
   const newBookmark = req.body
+  let userDb = 'user1'
 
-  console.log(newBookmark)
-
-  bookmark('rssapp', newBookmark, function (error, result) {
+  bookmark(userDb, newBookmark, function (error, result) {
     if (error) {
       res.status(500).json({ message: `Internal Server Error: ${error}` })
     }
+    console.log(result)
     res.status(200).json(result)
   })
 })

@@ -2,24 +2,27 @@ var FeedMe = require('feedme')
 var http = require('http')
 var https = require('https')
 
-function fetchFeeds (url, cb) {
-  if (url.startsWith('https:')) {
-    https.get(url, function (res) {
-      var parser = new FeedMe(true)
-      res.pipe(parser)
-      parser.on('end', function () {
-        cb(null, parser.done())
-      })
-    }).on('error', function (e) { console.log(e.message) })
-  } else if (url.startsWith('http:')) {
-    http.get(url, function (res) {
-      var parser = new FeedMe(true)
-      res.pipe(parser)
-      parser.on('end', function () {
-        cb(null, parser.done())
-      })
-    }).on('error', function (e) { console.log(e.message) })
-  }
+function fetchFeeds (url) {
+  return new Promise((resolve, reject) => {
+    if (url.startsWith('https:')) {
+      https.get(url, function (res) {
+        var parser = new FeedMe(true)
+        res.pipe(parser)
+        parser.on('end', function () {
+          resolve(parser.done())
+        })
+      }).on('error', function (error) { reject(error) })
+    } else if (url.startsWith('http:')) {
+      http.get(url, function (res) {
+        console.log(url)
+        var parser = new FeedMe(true)
+        res.pipe(parser)
+        parser.on('end', function () {
+          setTimeout(() => { resolve(parser.done()) }, 2000)
+        })
+      }).on('error', function (error) { reject(error) })
+    }
+  })
 }
 
   /*

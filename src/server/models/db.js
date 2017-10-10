@@ -25,69 +25,64 @@ MongoClient.connect('mongodb://localhost/rssapp')
     console.log(`Error connection to db: ${error}`)
   })
 
-function getFeeds (userDb, cb) {
-  let finalResult = ''
-  rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, slug: 0 })
-    // Get main data document; create it if it doesn't exist
-    .then(data => {
-      if (data !== null) {
-        return data
-      } else {
-        rssDb.collection(userDb).insert({
-          slug: 'data', categories: {}, metadata: { updated: new Date() }
-        })
-        .then(getFeeds(userDb, cb))
-        .catch(error => console.log(`Error creating database: ${error}`))
-      }
-    })
-    // Get category documents
-    .then(data => {
-      finalResult = data
-      const ids = []
-      const categories = data.categories
-      for (let id in categories) {
-        ids.push(categories[id])
-      }
-      let categoryIds = ids.map(id => ObjectId(id))
-      return rssDb.collection(userDb).find({ _id: { $in: categoryIds } }, { _id: 0 }).toArray()
-    })
-    // Add category documents to main data document and return
-    .then(feeds => {
-      finalResult.feeds = feeds
-      cb(null, { data: finalResult })
-    })
+async function getFeeds (userDb, cb) {
+  try {
+    let data = await rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, slug: 0 })
+    if (data === null) {
+      await rssDb.collection(userDb).insert({
+        slug: 'data',
+        categories: {},
+        favorites: [],
+        favoritesLookup: {},
+        read: {},
+        metadata: { updated: new Date() }
+      })
+      getFeeds(userDb, cb)
+    }
+    let finalResult = data
+    const ids = []
+    const categories = data.categories
+    for (let id in categories) {
+      ids.push(categories[id])
+    }
+    let categoryIds = ids.map(id => ObjectId(id))
+    let feeds = await rssDb.collection(userDb).find({ _id: { $in: categoryIds } }, { _id: 0 }).toArray()
+    finalResult.feeds = feeds
+    cb(null, { data: finalResult })
+  } catch (error) { console.log(`Failed getting feeds: ${error}`); cb(error) }
 }
 
-function refreshArticles (userDb, category, name, url, cb) {
+async function refreshArticles (userDb, category, name, url, cb) {
   const currentTime = new Date()
-  rssDb.collection(userDb).update({ slug: 'data' }, {$set: { 'metadata.updated': currentTime }})
-    .catch(error => console.log(`Error updating time: ${error}`))
+  try {
+    await rssDb.collection(userDb).update({ slug: 'data' }, {$set: { 'metadata.updated': currentTime }})
 
-  let _id = ''
-  rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, slug: 0 })
-    .then(result => result.categories[category])
-    .then(id => { _id = new ObjectId(id) })
-    .catch(error => console.log(`Error getting id for ${name}: ${error}`))
+    const res = await rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, slug: 0 })
+    const _id = new ObjectId(res.categories[category])
 
-  let fetchPromise = new Promise((resolve, reject) => {
-    fetchFeeds(url, function (error, result) {
-      if (error) reject(error)
-      resolve(result)
+    let result = await fetchFeeds(url) // , function (error, result) {
+      // if (error) cb(error)
+      // refresh(result)
+      // })
+
+    // async function refresh (result) {
+    let articles = result.items
+    delete result.items
+    let fav = await rssDb.collection(userDb).findOne({ slug: 'data'}, { _id: 0, favoritesLookup: 1 })
+    let favLookup = fav.favoritesLookup
+    articles = articles.map((article) => {
+      article.rssCategory = category
+      article.rssFeed = name
+      if (favLookup[article.title]) { article.bookmark = true }
+      article.bookmark = article.bookmark || false
+      return article
     })
-  })
-
-  fetchPromise
-    .then(feedData => {
-      const articles = feedData.items
-      delete feedData.items
-      rssDb.collection(userDb).update({ _id: _id }, { $set: { [`${name}.metadata`]: feedData } })
-        .catch(error => console.log(`Error updating ${name} metadata: ${error}`))
-      rssDb.collection(userDb).update({ _id: _id }, { $set: { [`${name}.articles`]: articles } })
-        .catch(error => console.log(`Error updating ${name} articles: ${error}`))
-    })
+    await rssDb.collection(userDb).update({ _id: _id }, { $set: { [`${name}.metadata`]: result } })
+    await rssDb.collection(userDb).update({ _id: _id }, { $set: { [`${name}.articles`]: articles } })
+    // }
+  } catch (error) { console.log(`Refresh articles failed: ${error}`) }
 
     // Sets up some query/filter strings
-    //
       /*
     const category = dir + '.name'
     const filter = {
@@ -187,24 +182,39 @@ function refreshArticles (userDb, category, name, url, cb) {
     */
 }
 
-function bookmark (db, newBookmark, cb) {
-  const _id = newBookmark.objId
-  delete newBookmark.objId
-  newBookmark.bookmark = true
+async function bookmark (userDb, newBookmark, cb) {
+  const category = newBookmark.rssCategory
+  const feed = newBookmark.rssFeed
+  const title = newBookmark.title
+  const link = newBookmark.link
+  const bookmark = !newBookmark.bookmark
+  newBookmark.bookmark = bookmark
 
-  let bookmarkQuery = {}
-  bookmarkQuery.favorites = newBookmark
+  try {
+    // Get ObjectId reference for category
+    const result = await rssDb.collection(userDb).findOne(
+      { slug: 'data' },
+      { _id: 0, [`categories.${category}`]: 1 }
+    )
+    const _id = result.categories[category]
 
-  let filter = { _id: new ObjectId(_id) }
+    // Toggle bookmark boolean on article object
+    await rssDb.collection(userDb).update(
+      { _id: ObjectId(_id), [`${feed}.articles.title`]: title },
+      { '$set': { [`${feed}.articles.$.bookmark`]: bookmark } }
+    )
 
-  rssDb.collection('feeds').update(filter, {
-    $push: bookmarkQuery
-  }, function (error, result) {
-    if (error) {
-      cb(error)
+    // Add or remove article to favorites
+    const action = bookmark === true ? 'add' : 'remove'
+    if (action === 'add') {
+      await rssDb.collection(userDb).update({ slug: 'data' }, { $push: { favorites: newBookmark } })
+      await rssDb.collection(userDb).update({ slug: 'data' }, { $set: { [`favoritesLookup.${title}`]: link } })
+    } else if (action === 'remove') {
+      await rssDb.collection(userDb).update({ slug: 'data' }, { $pull: { favorites: { title: title } } })
+      await rssDb.collection(userDb).update({ slug: 'data' }, { $unset: { [`favoritesLookup.${title}`]: link } })
     }
-    cb(null, result)
-  })
+    cb(null, 'success')
+  } catch (error) { console.log(`Failed creating bookmark: ${error}`); cb(error) }
 }
 
 function getCategories (cb) {

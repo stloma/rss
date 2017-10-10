@@ -3,7 +3,7 @@ const path = require('path')
 
 module.exports = {
   entry: {
-    app: './src/client/jsx/Router.jsx',
+    app: [ 'babel-polyfill', './src/client/jsx/Router.jsx' ],
     vendor: [ 'react', 'react-dom', 'react-router' ]
   },
   output: {
@@ -35,9 +35,11 @@ module.exports = {
       {
         enforce: 'pre',
         test: /\.jsx$/,
+        exclude: /(node_modules)/,
         loader: 'babel-loader',
         query: {
-          presets: [ 'react', 'es2015' ]
+          presets: [ 'react', 'es2017' ],
+          plugins: ['transform-async-to-generator']
         }
       }
     ]
