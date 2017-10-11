@@ -4,7 +4,8 @@ import express from 'express'
 import { ensureAuthenticated } from '../auth/passport.js'
 import {
   getFeeds, addFeed, addCategory,
-  deleteCategory, refreshArticles, bookmark
+  deleteCategory, refreshArticles, bookmark,
+  markRead
 } from '../models/db.js'
 
 const router = express.Router()
@@ -27,8 +28,22 @@ router.get('/feeds', (req, res) => {
   })
 })
 
+router.post('/read', (req, res) => {
+  // let userDb = req.session.passport.user
+  let userDb = 'user1'
+  const { category, feed } = req.body
+
+  markRead(category, feed, userDb, function (error, result) {
+    if (error) {
+      res.status(500).json({ message: `Internal Server Error: ${error}` })
+      throw error
+    }
+    res.json(result)
+  })
+})
+
 router.post('/articles', (req, res) => {
-  const { name, url, category, } = req.body
+  const { name, url, category } = req.body
   // let userDb = req.session.passport.user
   let userDb = 'user1'
 

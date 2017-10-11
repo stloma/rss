@@ -14,11 +14,10 @@ function fetchFeeds (url) {
       }).on('error', function (error) { reject(error) })
     } else if (url.startsWith('http:')) {
       http.get(url, function (res) {
-        console.log(url)
         var parser = new FeedMe(true)
         res.pipe(parser)
         parser.on('end', function () {
-          setTimeout(() => { resolve(parser.done()) }, 2000)
+          resolve(parser.done())
         })
       }).on('error', function (error) { reject(error) })
     }

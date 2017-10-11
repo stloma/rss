@@ -50,11 +50,13 @@ body {
 }
 
 .article-buttons span {
-  margin: 3px;
+  margin: 4px;
+  font-size: 16px;
+  transition: all .1s ease-in-out;
 }
 
 .article-buttons span:hover {
-  color: red;
+  transform: scale(1.1);
 }
 
 .panel {
