@@ -51,9 +51,10 @@
     "babel-register": "^6.24.1",
     "eslint": "^4.3.0",
     "feedme": "^1.0.1",
+    "feedparser": "^2.2.2",
     "react-dom": "^15.5.4",
     "react-router-dom": "^4.1.1",
-    "request": "^2.81.0",
+    "request": "^2.83.0",
     "webpack": "^2.6.1",
     "webpack-dev-server": "^2.4.5"
   }

@@ -1,7 +1,5 @@
 import express from 'express'
-// import { ObjectId } from 'mongodb'
 
-import { ensureAuthenticated } from '../auth/passport.js'
 import {
   getFeeds, addFeed, addCategory,
   deleteCategory, refreshArticles, bookmark,
@@ -9,10 +7,6 @@ import {
 } from '../models/db.js'
 
 const router = express.Router()
-
-router.get('/protected', ensureAuthenticated, (req, res) => {
-  res.status(200).json({ name: res.req.user.name })
-})
 
 // Start called by Router.jsx
 //
@@ -28,25 +22,20 @@ router.get('/feeds', (req, res) => {
   })
 })
 
-router.post('/read', (req, res) => {
-  // let userDb = req.session.passport.user
-  let userDb = 'user1'
-  const { category, feed } = req.body
-
-  markRead(category, feed, userDb, function (error, result) {
-    if (error) {
-      res.status(500).json({ message: `Internal Server Error: ${error}` })
-      throw error
-    }
-    res.json(result)
-  })
-})
-
-router.post('/articles', (req, res) => {
+router.post('/articles', async (req, res) => {
   const { name, url, category } = req.body
   // let userDb = req.session.passport.user
   let userDb = 'user1'
 
+  refreshArticles(userDb, category, name, url, function (error, result) {
+    if (error) {
+      res.status(500).json({ status: `${url} refresh failure: ${error}` })
+    } else {
+      res.status(200).json({ status: 'refresh success' })
+    }
+  })
+
+    /*
   let promise = new Promise(function (resolve, reject) {
     refreshArticles(userDb, category, name, url, function (error, result) {
       if (error) reject(error)
@@ -54,17 +43,20 @@ router.post('/articles', (req, res) => {
     })
   })
   promise.then(function (data) {
+    console.log(data)
     getFeeds(userDb, function (error, result) {
       if (error) {
         res.status(500).json({ message: `Internal Server Error: ${error}` })
         throw error
       }
-      res.status(200).json(result)
+      res.status(200).json(data)
     })
   })
   res.status(200).json({ status: 'refreshed articles' })
+  */
 })
 // End called by Router.jsx
+//
 //
 
 // Started called by EditCategories.jsx
@@ -110,6 +102,20 @@ router.post('/bookmark', (req, res) => {
     res.status(200).json(result)
   })
 })
+
+router.post('/read', (req, res) => {
+  // let userDb = req.session.passport.user
+  let userDb = 'user1'
+  const { category, feed, title, link } = req.body
+
+  markRead(category, feed, title, link, userDb, function (error, result) {
+    if (error) {
+      res.status(500).json({ message: `Internal Server Error: ${error}` })
+      throw error
+    }
+    res.json(result)
+  })
+})
 // End called by Articles.jsx
 //
 
@@ -137,48 +143,5 @@ router.post('/feeds', (req, res) => {
     res.status(200).send('1 record inserted')
   })
 })
-// End called by NewFeed.jsx
-//
-
-  /*
-router.delete('/bookmarks/:id', ensureAuthenticated, (req, res) => {
-  let userDb = req.session.passport.user
-  let bookmarkId
-  try {
-    bookmarkId = new ObjectId(req.params.id)
-  } catch (error) {
-    res.status(422).json({ message: `Invalid issue ID format: ${error}` })
-    return
-  }
-
-  deleteSite('bookmarks.' + userDb, bookmarkId, function (error, result) {
-    if (error) {
-      if (error === '404') {
-        res.status(404).json({ message: 'Delete object not found' })
-        return
-      }
-      res.status(500).json({ message: `Internal Server Error: ${error}` })
-      return
-    } res.status(200).json({ message: 'Successfully deleted object' })
-  })
-})
-
-router.patch('/bookmarks', ensureAuthenticated, (req, res) => {
-  let userDb = req.session.passport.user
-  const site = req.body
-  site.updated = new Date().getTime()
-
-  const errors = validateEdit(site)
-  if (errors) {
-    res.status(422).json(errors)
-    return
-  }
-
-  editSite('bookmarks.' + userDb, site, function (error, result) {
-    if (error) throw error
-    res.status(200).json('Edit site success')
-  })
-})
-*/
 
 export { router }

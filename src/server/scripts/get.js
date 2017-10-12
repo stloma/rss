@@ -1,7 +1,39 @@
-var FeedMe = require('feedme')
-var http = require('http')
-var https = require('https')
+const FeedParser = require('feedparser')
+const request = require('request')
 
+function fetchFeeds (url) {
+  return new Promise((resolve, reject) => {
+    const feedparser = new FeedParser()
+
+    request({ method: 'GET', url: url }, (e, res, body) => {
+      if (e) {
+        return reject(e)
+      }
+      if (res.statusCode !== 200) {
+        return reject(new Error(`Bad status code (status: ${res.statusCode}, url: ${url})`))
+      }
+      feedparser.end(body)
+    })
+
+    feedparser.on('error', (error) => {
+      reject(error)
+    })
+
+    let articles = []
+    feedparser.on('readable', () => {
+      let article = feedparser.read()
+
+      while (article) {
+        articles.push(article)
+        article = feedparser.read()
+      }
+    }).on('end', () => {
+      resolve(articles)
+    })
+  })
+}
+
+  /*
 function fetchFeeds (url) {
   return new Promise((resolve, reject) => {
     if (url.startsWith('https:')) {
@@ -19,10 +51,11 @@ function fetchFeeds (url) {
         parser.on('end', function () {
           resolve(parser.done())
         })
-      }).on('error', function (error) { reject(error) })
+      }).on('error', function (error) { console.log(error); reject(error) })
     }
   })
 }
+*/
 
   /*
 updateFeeds('http://127.0.0.1/rss/lifehacker.rss', function (err, res) {

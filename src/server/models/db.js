@@ -11,23 +11,23 @@ const store = new MongoDBStore(
     collection: 'sessions'
   })
 
-store.on('error', function (error) {
+store.on('error', (error) => {
   if (error) throw error
 })
 
 let rssDb
 
 MongoClient.connect('mongodb://localhost/rssapp')
-  .then(connection => {
+  .then((connection) => {
     rssDb = connection
   })
-  .catch(error => {
+  .catch((error) => {
     console.log(`Error connection to db: ${error}`)
   })
 
-async function getFeeds (userDb, cb) {
+async function getFeeds(userDb, cb) {
   try {
-    let data = await rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, slug: 0 })
+    const data = await rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, slug: 0 })
     if (data === null) {
       await rssDb.collection(userDb).insert({
         slug: 'data',
@@ -39,19 +39,19 @@ async function getFeeds (userDb, cb) {
       })
       getFeeds(userDb, cb)
     }
-    let finalResult = data
+    const finalResult = data
     const ids = []
     const categories = data.categories
-    for (let id in categories) {
+    for (const id in categories) {
       ids.push(categories[id])
     }
-    let categoryIds = ids.map(id => ObjectId(id))
+    const categoryIds = ids.map(id => ObjectId(id))
     let feeds = await rssDb.collection(userDb).find({ _id: { $in: categoryIds } }, { _id: 0 }).toArray()
 
-    feeds = feeds.map(feed => {
-      let keys = Object.keys(feed).filter(key => key !== 'name')
+    feeds = feeds.map((feed) => {
+      const keys = Object.keys(feed).filter(key => key !== 'name')
       let count = 0
-      keys.forEach(key => {
+      keys.forEach((key) => {
         count += feed[key].articles.length
       })
       feed.count = count
@@ -63,71 +63,84 @@ async function getFeeds (userDb, cb) {
   } catch (error) { console.log(`Failed getting feeds: ${error}`); cb(error) }
 }
 
-async function markRead (category, feed, userDb, cb) {
+async function markRead(category, feed, title, link, userDb, cb) {
   try {
-      // Get all category reference ids
-    let filter = category === 'all' ? { _id: 0, categories: 1 } : { [`categories.${category}`]: 1 }
+    // Get all category reference ids
+    const filter = category === 'all' ? { _id: 0, categories: 1 } : { [`categories.${category}`]: 1 }
     let catIds = await rssDb.collection(userDb).findOne(
-        { slug: 'data' },
-        filter
-      )
-      // Assign category id, this assumes only marking one category as read
+      { slug: 'data' },
+      filter
+    )
+
+    // Assign category id, this assumes only marking one category as read
     catIds = Object.values(catIds.categories)
     let finalRead = {}
+    let allReadArticles = {}
+    const origReadArticles = await rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, read: 1 })
+
+    // If we're just removing one article
+    if (title) {
+      await rssDb.collection(userDb).update(
+        { _id: new ObjectId(catIds[0]) },
+        { $pull: { [`${category}.articles.${title}`]: title } }
+      )
+      title = title.replace(/\.|\$/g, '_')
+      allReadArticles = { [title]: link }
+
     // For each category by document reference
-    for (let catId of catIds) {
-      // Get articles, for many or one feeds per category
-      let getArticles = feed === 'all' ? { _id: 0 } : { _id: 0, [`${feed}.articles`]: 1 }
-      let articles = await rssDb.collection(userDb).findOne({ _id: new ObjectId(catId) }, getArticles)
-      const feeds = Object.keys(articles).filter(key => key !== 'name')
-      // For each feed
-      let readArticles = []
-      for (let feed of feeds) {
-        readArticles = [...readArticles, ...articles[feed].articles]
-        await rssDb.collection(userDb).update(
-          { _id: new ObjectId(catId) },
-          { $set: { [`${feed}.articles`]: [], [`${feed}.metadata.count`]: 0 } }
-        )
+    } else {
+      for (const catId of catIds) {
+        // Get articles, one feed/s per category
+        const getArticles = feed === 'all' ? { _id: 0 } : { _id: 0, [`${feed}.articles`]: 1 }
+        const articles = await rssDb.collection(userDb).findOne({ _id: new ObjectId(catId) }, getArticles)
+        const feeds = Object.keys(articles).filter(key => key !== 'name')
+        let readArticles = []
+
+        // For each feed
+        for (const feed of feeds) {
+          readArticles = [...readArticles, ...articles[feed].articles]
+          await rssDb.collection(userDb).update(
+            { _id: new ObjectId(catId) },
+            { $set: { [`${feed}.articles`]: [], [`${feed}.metadata.count`]: 0 } }
+          )
+        }
+        // Replace periods and dollar signs so article titles can be stored as
+        // keys for quick lookup
+        readArticles.forEach((article) => {
+          const title = article.title.replace(/\.|\$/g, '_')
+          allReadArticles[title] = article.link
+        })
       }
-      let allReadArticles = {}
-      readArticles.forEach(article => {
-        let title = article.title.replace(/\.|\$/g, '_')
-        allReadArticles[title] = article.link
-      })
-      let origReadArticles = await rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, read: 1 })
-      finalRead = Object.assign({}, finalRead, origReadArticles.read, allReadArticles)
     }
+    finalRead = Object.assign({}, finalRead, origReadArticles.read, allReadArticles)
     await rssDb.collection(userDb).update({ slug: 'data' }, { $set: { read: finalRead } })
     cb(null)
   } catch (error) { console.log(`Failed marking ${category}: ${feed} as read: ${error}`); cb(error) }
 }
 
-async function refreshArticles (userDb, category, name, url, cb) {
-  const currentTime = new Date()
+// This is called once per feed from Router.jsx
+async function refreshArticles(userDb, category, name, url, cb) {
+  const currentTime = new Date().getTime()
   try {
-    await rssDb.collection(userDb).update({ slug: 'data' }, {$set: { 'metadata.updated': currentTime }})
+    await rssDb.collection(userDb).update({ slug: 'data' }, { $set: { 'metadata.updated': currentTime } })
 
     // Get document reference for the category
     const res = await rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, slug: 0 })
     const _id = new ObjectId(res.categories[category])
 
-    let result = await fetchFeeds(url)
+    const articles = await fetchFeeds(url)
 
-    let articles = result.items
-    delete result.items
-
-    // Get hash maps for looking up favorites and articles that are marked as
-    // read
-    let fav = await rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, favoritesLookup: 1 })
-    let read = await rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, read: 1 })
-    let favLookup = fav.favoritesLookup
-    let readLookup = read.read
+    // Get hash maps for looking up articles that are marked as read and favorites
+    const fav = await rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, favoritesLookup: 1 })
+    const read = await rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, read: 1 })
+    const favLookup = fav.favoritesLookup
+    const readLookup = read.read
 
     // Check if articles were previsouly marked as read. Storing a key with a .
     // or $ is not allowed in mongo, so do a string replacement for that chars
-    let articlesFinal = []
-    for (let article of articles) {
-      let title = article.title.replace(/\.|\$/g, '_')
+    const articlesFinal = []
+    for (const article of articles) {
+      const title = article.title.replace(/\.|\$/g, '_')
       if (readLookup[title]) {
         // Article marked as read
         continue
@@ -138,112 +151,17 @@ async function refreshArticles (userDb, category, name, url, cb) {
       article.rssFeed = name
       articlesFinal.push(article)
     }
-    result.count = articlesFinal.length
-    await rssDb.collection(userDb).update({ _id: _id }, { $set: { [`${name}.metadata`]: result } })
-    await rssDb.collection(userDb).update({ _id: _id }, { $set: { [`${name}.articles`]: articlesFinal } })
-  } catch (error) { console.log(`Refresh articles failed: ${error}`) }
+    const count = articlesFinal.length
+    await Promise.all([
+      rssDb.collection(userDb).update({ _id }, { $set: { [`${name}.count`]: count } }),
+      rssDb.collection(userDb).update({ _id }, { $set: { [`${name}.articles`]: articlesFinal } })
+    ])
+
+    cb(null)
+  } catch (error) { cb(error) }
 }
 
-    // Sets up some query/filter strings
-      /*
-    const category = dir + '.name'
-    const filter = {
-      _id: _id
-    }
-    filter[category] = name
-
-    const projection = dir + '.$.'
-
-    const updated = projection + 'updated'
-    const title = projection + 'title'
-    const description = projection + 'description'
-    const articles = projection + 'articles'
-    const count = projection + 'count'
-
-    // Start article cleanup
-    //
-    let newArticles = result.items
-    let oldArticles = []
-
-    // Pull & delete articles
-    let clearArticles = {}
-    clearArticles[articles] = []
-
-    function cleanUp (cb) {
-      rssDb.collection('feeds').findAndModify(
-            filter,
-            [['_id', 'asc']],
-            {$set: clearArticles},
-             function (err, result) {
-               if (err) throw err
-               // Is this having to filter *all* articles based on name each time?
-               //
-               result.value[dir].map(item => console.log(item.name))
-               cb(null, result.value[dir].filter(item => item.name === name)[0].articles)
-             }
-          )
-    }
-    cleanUp(function (err, res) {
-      if (err) throw err
-
-      oldArticles = res
-      let mergedArticles = [...newArticles, ...oldArticles]
-      // Sort articles by date
-      //
-      mergedArticles.sort(function (a, b) {
-        b.directory = dir
-        a.directory = dir
-        b.feed = name
-        a.feed = name
-        return new Date(b.pubdate).getTime() - new Date(a.pubdate).getTime()
-      })
-      // Remove duplicate articles
-      //
-      let seen = {}
-      let dupFreeArticles = []
-      for (let i = 0; i < mergedArticles.length; i++) {
-        let title = mergedArticles[i].title
-        if (seen[title]) {
-          continue
-        }
-        seen[title] = true
-        dupFreeArticles.push(mergedArticles[i])
-      }
-
-      // Updates feed metadata (title, description, updated time, count)
-      //
-      let feedQuery = {}
-      feedQuery[title] = result.title
-      feedQuery[description] = result.description
-      feedQuery[updated] = currentTime
-      feedQuery[count] = dupFreeArticles.length
-
-      rssDb.collection('feeds').update(filter, {
-        $set: feedQuery
-      }, function (error, result) {
-        if (error) {
-          cb(error)
-        }
-      })
-
-      // Insert merged & sorted articles
-      let articleQuery = {}
-      articleQuery[articles] = {}
-      let each = '$each'
-      articleQuery[articles][each] = dupFreeArticles
-
-      rssDb.collection('feeds').update(filter, {
-        $push: articleQuery
-      }, function (error, result) {
-        if (error) {
-          cb(error)
-        }
-      })
-    })
-  })
-    */
-
-async function bookmark (userDb, newBookmark, cb) {
+async function bookmark(userDb, newBookmark, cb) {
   const category = newBookmark.rssCategory
   const feed = newBookmark.rssFeed
   const title = newBookmark.title
@@ -262,7 +180,7 @@ async function bookmark (userDb, newBookmark, cb) {
     // Toggle bookmark boolean on article object
     await rssDb.collection(userDb).update(
       { _id: ObjectId(_id), [`${feed}.articles.title`]: title },
-      { '$set': { [`${feed}.articles.$.bookmark`]: bookmark } }
+      { $set: { [`${feed}.articles.$.bookmark`]: bookmark } }
     )
 
     // Add or remove article to favorites
@@ -271,181 +189,73 @@ async function bookmark (userDb, newBookmark, cb) {
       await rssDb.collection(userDb).update({ slug: 'data' }, { $push: { favorites: newBookmark } })
       await rssDb.collection(userDb).update({ slug: 'data' }, { $set: { [`favoritesLookup.${title}`]: link } })
     } else if (action === 'remove') {
-      await rssDb.collection(userDb).update({ slug: 'data' }, { $pull: { favorites: { title: title } } })
+      await rssDb.collection(userDb).update({ slug: 'data' }, { $pull: { favorites: { title } } })
       await rssDb.collection(userDb).update({ slug: 'data' }, { $unset: { [`favoritesLookup.${title}`]: link } })
     }
     cb(null, 'success')
   } catch (error) { console.log(`Failed creating bookmark: ${error}`); cb(error) }
 }
 
-function getCategories (cb) {
+function getCategories(cb) {
   rssDb.collection('categories').find().toArray()
-    .then(categories => {
-      cb(null, { categories: categories })
+    .then((categories) => {
+      cb(null, { categories })
     })
 }
 
-function addFeed (userDb, feed, cb) {
+function addFeed(userDb, feed, cb) {
   const { category, name, url } = feed
   // let feedName = name
-  let update = { [`categories.${category}`]: 1 }
+  const update = { [`categories.${category}`]: 1 }
 
   rssDb.collection(userDb).findOne({ slug: 'data' }, update)
-    .then(result => {
+    .then((result) => {
       rssDb.collection(userDb).update(
-      { _id: result.categories[category] },
-      { $set: { [name]: { articles: [], url: url, category: category, updated: new Date() } } }
-    )
+        { _id: result.categories[category] },
+        { $set: { [name]: { articles: [], url, category, updated: new Date() } } }
+      )
     })
     .catch(error => console.log(error))
 }
 
-function addCategory (userDb, category, _id, cb) {
+function addCategory(userDb, category, _id, cb) {
   const reference = new ObjectId()
 
-  let addCategory = { [`categories.${category}`]: reference }
+  const addCategory = { [`categories.${category}`]: reference }
 
   rssDb.collection(userDb).insert({ _id: reference, name: category })
 
   rssDb.collection(userDb).update({ slug: 'data' }, {
     $set: addCategory
   },
-   function (err, result) {
-     if (err) {
-       cb(err)
-     } else {
-       cb(null, result)
-     }
-   }
+  (err, result) => {
+    if (err) {
+      cb(err)
+    } else {
+      cb(null, result)
+    }
+  }
   )
 }
 
-function deleteCategory (dbname, toDelete, _id, cb) {
+function deleteCategory(dbname, toDelete, _id, cb) {
   const id = new ObjectId(_id)
 
-  for (let category in toDelete) {
-    let query = {}
+  for (const category in toDelete) {
+    const query = {}
     query[toDelete[category]] = ''
     rssDb.collection('feeds').update({ _id: id }, {
       $unset: query
     },
-   function (err, result) {
-     if (err) {
-       cb(err)
-     } else {
-       cb(null, result)
-     }
-   }
-  )
-  }
-}
-  /*
-function fetchArticles (directories, cb) {
-  directories.map(dir =>
-    dir.items.map(item =>
-      downloadFeed(item.url, function (error, result) {
-        if (error) throw error
-        console.log(result.title)
-        console.log(result.description)
-      })
-    )
-  )
-  // let bookmarkId = new ObjectId(site._id)
-  rssDb.collection('directories').update({ title: feed.category }, {
-    $push: {
-      items: {
-        name: feed.name,
-        url: feed.url
-      }
-    }
-  }, function (error, result) {
-    if (error) {
-      cb(error)
-    } else {
-      cb(null, result)
-    }
-  })
-}
-  */
-
-  /*
-function addSite (rssDb, newFeed, cb) {
-  let feedId = new ObjectId(newFeed._id)
-  bookmarkDb.collection(bmarkDb).updateOne({ _id: bookmarkId }, {
-    $set: {
-      name: site.name,
-      url: site.url,
-      comment: site.comment,
-      tags: site.tags,
-      update: site.updated
-    }}, function (error, result) {
-      if (error) {
-        cb(error)
+    (err, result) => {
+      if (err) {
+        cb(err)
       } else {
         cb(null, result)
       }
-    })
+    }
+    )
+  }
 }
-
-function addFeed (bmarkDb, newFeed, cb) {
-  rssDb.collection(bmarkDb).insertOne(newFeed, function (error, res) {
-    let _id = res.insertedId
-
-    download(newSite.url, _id, function (error, result) {
-      if (error) {
-        cb(error)
-        return
-      }
-      newSite.favicon = result ? _id + '.ico' : 'default-favicon.png'
-      let bookmarkId = new ObjectId(_id)
-      bookmarkDb.collection(bmarkDb).updateOne({ _id: bookmarkId },
-        {$set: {
-          favicon: newSite.favicon
-        }})
-          .catch(error => {
-            throw error
-          })
-    })
-    cb(error, res)
-  })
-}
-*/
-
-/*
-function getFeeds (userDb, cb) {
-  rssDb.collection('bookmarks.' + userDb).find().toArray()
-    .then(bookmarks => {
-      let result = countBy(bookmarks.map(function (bookmark) {
-        return bookmark.tags
-      })
-         .join(' ')
-        .split(' ')
-      )
-      let tagcount = []
-      Object.keys(result).forEach((tag) => {
-        tagcount.push({ value: tag, count: result[tag] })
-      })
-      const metadata = { total_count: bookmarks.length }
-      cb(null, { _metadata: metadata, tagcount: tagcount, records: bookmarks })
-    })
-    .catch(error => {
-      cb(error)
-    })
-}
-*/
-
-  /*
-
-function deleteSite (bmarkDb, _id, cb) {
-  bookmarkDb.collection(bmarkDb).deleteOne({ _id: _id }).then((result) => {
-    let error = result.result.n === 1 ? null : '404'
-    cb(error)
-  })
-  .catch(error => {
-    cb(error)
-  })
-}
-
-*/
 
 export { markRead, bookmark, rssDb, store, getFeeds, getCategories, refreshArticles, addFeed, addCategory, deleteCategory }
