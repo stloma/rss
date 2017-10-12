@@ -52,11 +52,30 @@ body {
 .article-buttons span {
   margin: 4px;
   font-size: 16px;
-  transition: all .1s ease-in-out;
+  transition: all .2s ease-in-out;
+  text-shadow: -.5px 0 black, 0 .5px black, .5px 0 black, 0 -.5px black;
 }
 
 .article-buttons span:hover {
+  color: green !important;
+  text-shadow: none;
   transform: scale(1.1);
+}
+
+.feed-bar {
+}
+
+.pointer {
+  cursor: pointer;
+}
+
+.feed-bar:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.feed-link {
+  display: inline;
 }
 
 .panel {
@@ -64,8 +83,13 @@ body {
   border: 0 !important;
 }
 
-.badge {
+.category-badge {
   float: right;
+}
+
+.feed-badge {
+  float: right;
+  margin-top: 8px;
 }
 
 .float-right {
@@ -76,7 +100,7 @@ body {
   color: black;
 }
 
-.feed-link {
+.feed-bar {
   padding: 3px;
 }
 

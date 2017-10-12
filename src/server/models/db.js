@@ -65,34 +65,41 @@ async function getFeeds (userDb, cb) {
 
 async function markRead (category, feed, userDb, cb) {
   try {
-    if (category !== 'all') {
-      let catId = await rssDb.collection(userDb).findOne(
+      // Get all category reference ids
+    let filter = category === 'all' ? { _id: 0, categories: 1 } : { [`categories.${category}`]: 1 }
+    let catIds = await rssDb.collection(userDb).findOne(
         { slug: 'data' },
-        { _id: 0, [`categories.${category}`]: 1 }
+        filter
       )
-      catId = catId.categories[category]
+      // Assign category id, this assumes only marking one category as read
+    catIds = Object.values(catIds.categories)
+    let finalRead = {}
+    // For each category by document reference
+    for (let catId of catIds) {
+      // Get articles, for many or one feeds per category
       let getArticles = feed === 'all' ? { _id: 0 } : { _id: 0, [`${feed}.articles`]: 1 }
       let articles = await rssDb.collection(userDb).findOne({ _id: new ObjectId(catId) }, getArticles)
-      const keys = Object.keys(articles).filter(key => key !== 'name')
+      const feeds = Object.keys(articles).filter(key => key !== 'name')
+      // For each feed
       let readArticles = []
-      keys.forEach(key => {
-        readArticles = [...readArticles, ...articles[key].articles]
-        rssDb.collection(userDb).update(
+      for (let feed of feeds) {
+        readArticles = [...readArticles, ...articles[feed].articles]
+        await rssDb.collection(userDb).update(
           { _id: new ObjectId(catId) },
-          { $set: { [`${key}.articles`]: [] }, 'metadata.count': 0 }
+          { $set: { [`${feed}.articles`]: [], [`${feed}.metadata.count`]: 0 } }
         )
-      })
+      }
       let allReadArticles = {}
       readArticles.forEach(article => {
-        allReadArticles[article.title] = article.link
+        let title = article.title.replace(/\.|\$/g, '_')
+        allReadArticles[title] = article.link
       })
       let origReadArticles = await rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, read: 1 })
-      let finalRead = Object.assign({}, origReadArticles.read, allReadArticles)
-      await rssDb.collection(userDb).update({ slug: 'data' }, { $set: { read: finalRead } })
+      finalRead = Object.assign({}, finalRead, origReadArticles.read, allReadArticles)
     }
-
+    await rssDb.collection(userDb).update({ slug: 'data' }, { $set: { read: finalRead } })
     cb(null)
-  } catch (error) { console.log(`Failed getting feeds: ${error}`); cb(error) }
+  } catch (error) { console.log(`Failed marking ${category}: ${feed} as read: ${error}`); cb(error) }
 }
 
 async function refreshArticles (userDb, category, name, url, cb) {
@@ -100,6 +107,7 @@ async function refreshArticles (userDb, category, name, url, cb) {
   try {
     await rssDb.collection(userDb).update({ slug: 'data' }, {$set: { 'metadata.updated': currentTime }})
 
+    // Get document reference for the category
     const res = await rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, slug: 0 })
     const _id = new ObjectId(res.categories[category])
 
@@ -107,23 +115,30 @@ async function refreshArticles (userDb, category, name, url, cb) {
 
     let articles = result.items
     delete result.items
-    result.count = articles.length
+
+    // Get hash maps for looking up favorites and articles that are marked as
+    // read
     let fav = await rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, favoritesLookup: 1 })
     let read = await rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, read: 1 })
     let favLookup = fav.favoritesLookup
     let readLookup = read.read
+
+    // Check if articles were previsouly marked as read. Storing a key with a .
+    // or $ is not allowed in mongo, so do a string replacement for that chars
     let articlesFinal = []
     for (let article of articles) {
-      if (readLookup[article.title]) {
-        console.log(`${article.title} marked as read`)
+      let title = article.title.replace(/\.|\$/g, '_')
+      if (readLookup[title]) {
+        // Article marked as read
         continue
       }
       article.bookmark = article.bookmark || false
+      if (favLookup[article.title]) { article.bookmark = true }
       article.rssCategory = category
       article.rssFeed = name
-      if (favLookup[article.title]) { article.bookmark = true }
       articlesFinal.push(article)
     }
+    result.count = articlesFinal.length
     await rssDb.collection(userDb).update({ _id: _id }, { $set: { [`${name}.metadata`]: result } })
     await rssDb.collection(userDb).update({ _id: _id }, { $set: { [`${name}.articles`]: articlesFinal } })
   } catch (error) { console.log(`Refresh articles failed: ${error}`) }
