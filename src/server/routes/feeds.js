@@ -12,8 +12,8 @@ const router = express.Router()
 //
 router.get('/feeds', (req, res) => {
   // let userDb = req.session.passport.user
-  let userDb = 'user1'
-  getFeeds(userDb, function (error, result) {
+  const userDb = 'user1'
+  getFeeds(userDb, (error, result) => {
     if (error) {
       res.status(500).json({ message: `Internal Server Error: ${error}` })
       throw error
@@ -25,9 +25,9 @@ router.get('/feeds', (req, res) => {
 router.post('/articles', async (req, res) => {
   const { name, url, category } = req.body
   // let userDb = req.session.passport.user
-  let userDb = 'user1'
+  const userDb = 'user1'
 
-  refreshArticles(userDb, category, name, url, function (error, result) {
+  refreshArticles(userDb, category, name, url, (error, result) => {
     if (error) {
       res.status(500).json({ status: `${url} refresh failure: ${error}` })
     } else {
@@ -35,7 +35,7 @@ router.post('/articles', async (req, res) => {
     }
   })
 
-    /*
+  /*
   let promise = new Promise(function (resolve, reject) {
     refreshArticles(userDb, category, name, url, function (error, result) {
       if (error) reject(error)
@@ -65,11 +65,11 @@ router.post('/editcategories', (req, res) => {
   const { _id, name, toDelete } = req.body
   const userDb = 'user1'
 
-  function cb (result) {
+  function cb(result) {
     res.status(200).send('1 record inserted')
   }
   if (name) {
-    addCategory(userDb, name, _id, function (error, result) {
+    addCategory(userDb, name, _id, (error, result) => {
       if (error) {
         res.status(500).json({ message: `Internal Server Error: ${error}` })
       }
@@ -77,7 +77,7 @@ router.post('/editcategories', (req, res) => {
     })
   }
   if (toDelete) {
-    deleteCategory('rssapp', toDelete, _id, function (error, result) {
+    deleteCategory('rssapp', toDelete, _id, (error, result) => {
       if (error) {
         res.status(500).json({ message: `Internal Server Error: ${error}` })
       }
@@ -92,9 +92,9 @@ router.post('/editcategories', (req, res) => {
 //
 router.post('/bookmark', (req, res) => {
   const newBookmark = req.body
-  let userDb = 'user1'
+  const userDb = 'user1'
 
-  bookmark(userDb, newBookmark, function (error, result) {
+  bookmark(userDb, newBookmark, (error, result) => {
     if (error) {
       res.status(500).json({ message: `Internal Server Error: ${error}` })
     }
@@ -105,10 +105,10 @@ router.post('/bookmark', (req, res) => {
 
 router.post('/read', (req, res) => {
   // let userDb = req.session.passport.user
-  let userDb = 'user1'
+  const userDb = 'user1'
   const { category, feed, title, link } = req.body
 
-  markRead(category, feed, title, link, userDb, function (error, result) {
+  markRead(category, feed, title, link, userDb, (error, result) => {
     if (error) {
       res.status(500).json({ message: `Internal Server Error: ${error}` })
       throw error
@@ -127,7 +127,7 @@ router.post('/feeds', (req, res) => {
   const newFeed = req.body
 
   res.status(200).send('1 record inserted')
-    /*
+  /*
   const errors = validateFeed(newFeed)
   if (errors) {
     res.status(400).json(errors)
@@ -136,7 +136,7 @@ router.post('/feeds', (req, res) => {
   */
 
   // addFeed('rssapp', newFeed, function (error, result) {
-  addFeed(userDb, newFeed, function (error, result) {
+  addFeed(userDb, newFeed, (error, result) => {
     if (error) {
       res.status(500).json({ message: `Internal Server Error: ${error}` })
     }

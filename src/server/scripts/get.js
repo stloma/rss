@@ -1,11 +1,11 @@
 const FeedParser = require('feedparser')
 const request = require('request')
 
-function fetchFeeds (url) {
+function fetchFeeds(url) {
   return new Promise((resolve, reject) => {
     const feedparser = new FeedParser()
 
-    request({ method: 'GET', url: url }, (e, res, body) => {
+    request({ method: 'GET', url }, (e, res, body) => {
       if (e) {
         return reject(e)
       }
@@ -19,7 +19,7 @@ function fetchFeeds (url) {
       reject(error)
     })
 
-    let articles = []
+    const articles = []
     feedparser.on('readable', () => {
       let article = feedparser.read()
 
@@ -33,7 +33,7 @@ function fetchFeeds (url) {
   })
 }
 
-  /*
+/*
 function fetchFeeds (url) {
   return new Promise((resolve, reject) => {
     if (url.startsWith('https:')) {
@@ -57,7 +57,7 @@ function fetchFeeds (url) {
 }
 */
 
-  /*
+/*
 updateFeeds('http://127.0.0.1/rss/lifehacker.rss', function (err, res) {
   if (err) throw err
   res.items.map(item => console.log(item.pubdate))
