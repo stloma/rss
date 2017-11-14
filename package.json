@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
- "scripts": {
+  "scripts": {
     "start-hook": "nodemon -w src/server src/server/start_hook.js",
     "devserver": "webpack-dev-server --hot --inline",
     "production": "webpack --config webpack.prod.js && babel src/server --presets es2015 --out-dir dist/server --source-maps"
