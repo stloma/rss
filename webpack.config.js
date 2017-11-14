@@ -3,8 +3,8 @@ const path = require('path')
 
 module.exports = {
   entry: {
-    app: [ 'babel-polyfill', './src/client/jsx/Router.jsx' ],
-    vendor: [ 'react', 'react-dom', 'react-router' ]
+    app: ['babel-polyfill', './src/client/components/Router/Router.jsx', './src/client/styles/base.scss'],
+    vendor: ['react', 'react-dom', 'react-router', 'react-bootstrap', 'react-router-bootstrap']
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -29,7 +29,10 @@ module.exports = {
     reasons: true,
     chunks: true
   },
-  devtool: 'source-map',
+  devtool: 'inline-source-map',
+  resolve: {
+    extensions: ['.js', '.jsx']
+  },
   module: {
     loaders: [
       {
@@ -38,9 +41,13 @@ module.exports = {
         exclude: /(node_modules)/,
         loader: 'babel-loader',
         query: {
-          presets: [ 'react', 'es2017' ],
-          plugins: ['transform-async-to-generator']
+          presets: ['react', 'es2015', 'stage-2']
         }
+      },
+      {
+        test: /\.scss$/,
+        exclude: /(node_modules)/,
+        loaders: ['style-loader', 'css-loader', 'sass-loader']
       }
     ]
   }
