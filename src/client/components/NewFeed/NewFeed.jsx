@@ -1,6 +1,7 @@
-/* globals fetch */
+/* globals fetch, document */
 
 import React from 'react'
+import PropTypes from 'prop-types'
 import { Modal } from 'react-bootstrap'
 
 export default class AddFeed extends React.Component {
@@ -41,8 +42,7 @@ export default class AddFeed extends React.Component {
     this.createFeed({
       name: form.name.value,
       url: form.url.value,
-      category: form.category.value,
-      _id: this.props._id
+      category: form.category.value
     })
   }
 
@@ -57,14 +57,14 @@ export default class AddFeed extends React.Component {
             <form method='post' name='FeedAdd' onSubmit={this.handleSubmit}>
               <fieldset>
                 <div className='form-group'>
-                  <label className='control-label'>Name</label>
+                  <label htmlFor='name' className='control-label'>Name</label>
                   <input
                     type='text'
                     className='form-control'
                     name='name'
                     placeholder='Name'
                   />
-                  <label className='control-label'>Url</label>
+                  <label htmlFor='url' className='control-label'>Url</label>
                   <input
                     type='text'
                     className='form-control'
@@ -96,4 +96,10 @@ export default class AddFeed extends React.Component {
       </div>
     )
   }
+}
+
+AddFeed.propTypes = {
+  addFeed: PropTypes.func.isRequired,
+  categories: PropTypes.array.isRequired,
+  loadFeeds: PropTypes.func.isRequired
 }

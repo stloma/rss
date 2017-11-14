@@ -1,7 +1,8 @@
-/* globals fetch */
+/* globals fetch, document */
 
 import ReactDOM from 'react-dom'
 import React from 'react'
+import PropTypes from 'prop-types'
 import { BrowserRouter as Router, Route, Switch, withRouter } from 'react-router-dom'
 
 import Articles from '../Articles/Articles'
@@ -17,87 +18,17 @@ class Container extends React.Component {
       selectedFeed: {},
       favorites: []
     }
-    this.loadFeeds = this.loadFeeds.bind(this)
-    this.updateArticles = this.updateArticles.bind(this)
-    this.selectedFeed = this.selectedFeed.bind(this)
-    this.markRead = this.markRead.bind(this)
-    this.updateCount = this.updateCount.bind(this)
-  }
-
-  // loads feeds from database without fetching from external sources
-  async loadFeeds(updated = false) {
-    const fetchData = {
-      method: 'GET',
-      credentials: 'include'
-    }
-
-    try {
-      const response = await fetch('/api/feeds', fetchData)
-
-      if (response.ok) {
-        const result = await response.json()
-        let { categories, feeds, favorites } = result.data
-
-        categories = Object.keys(categories)
-        feeds.favorites = favorites
-
-        if (categories.length === 0) {
-          this.setState({ feeds: false, categories: false })
-        } else {
-          this.setState({ feeds, categories, favorites })
-        }
-
-        if (!updated) {
-          this.updateArticles()
-        }
-      }
-    } catch (error) { console.log(`Failed fetching articles: ${error}`) }
-  }
-
-  // fetches new articles from external sources and updates database
-  updateArticles() {
-    const { feeds } = this.state
-
-    const fetches = feeds.map((category) => {
-      delete category.name
-      delete category.count
-      for (const feed in category) {
-        const data = {
-          category: category[feed].category,
-          name: feed,
-          url: category[feed].url
-        }
-        return fetch('/api/articles', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-          credentials: 'include'
-        }).then((response) => {
-          if (!response.ok) {
-            console.error(`Error fetching ${category[feed].url}`)
-          }
-        })
-      }
-    })
-
-    Promise.all(fetches)
-      .then(res => this.loadFeeds(true))
-      .catch(error => console.log(`Update articles error: ${error}`))
-  }
-
-  selectedFeed(category, feed = 'all') {
-    this.setState({ selectedFeed: { category, feed } })
   }
 
   componentDidMount() {
-    let { category, feed } = this.state.selectedFeed
-    category = category || 'all'
-    feed = feed || 'all'
-    this.setState({ category, feed })
     this.loadFeeds()
   }
 
-  async markRead() {
+  selectedFeed = (category, feed = 'all') => {
+    this.setState({ selectedFeed: { category, feed } })
+  }
+
+  markRead = async () => {
     const category = this.state.selectedFeed.category || 'all'
     const feed = this.state.selectedFeed.feed || 'all'
 
@@ -117,7 +48,73 @@ class Container extends React.Component {
     } catch (error) { console.error(`Mark read failure: ${error}`) }
   }
 
-  updateCount(item) {
+
+  // loads feeds from database without fetching from external sources
+  loadFeeds = async (updated = false) => {
+    const fetchData = {
+      method: 'GET',
+      credentials: 'include'
+    }
+
+    try {
+      const response = await fetch('/api/feeds', fetchData)
+
+      if (response.ok) {
+        const result = await response.json()
+        const { feeds, favorites } = result.data
+        let { categories } = result.data
+
+        categories = Object.keys(categories)
+        feeds.favorites = favorites
+
+        if (categories.length === 0) {
+          this.setState({ feeds: false, categories: false })
+        } else {
+          this.setState({ feeds, categories, favorites })
+        }
+
+        if (!updated) {
+          this.updateArticles()
+        }
+      }
+    } catch (error) { console.log(`Failed fetching articles: ${error}`) }
+  }
+
+  // fetches new articles from external sources and updates database
+  updateArticles = () => {
+    const { feeds } = this.state
+
+    const fetches = feeds.map((categoryParam) => {
+      const category = categoryParam
+      delete category.name
+      delete category.count
+      let promise
+      Object.keys(category).forEach((feed) => {
+        const data = {
+          category: category[feed].category,
+          name: feed,
+          url: category[feed].url
+        }
+        promise = fetch('/api/articles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+          credentials: 'include'
+        }).then((response) => {
+          if (!response.ok) {
+            console.error(`Error fetching ${category[feed].url}`)
+          }
+        })
+      })
+      return promise
+    })
+
+    Promise.all(fetches)
+      .then(() => this.loadFeeds(true))
+      .catch(error => console.log(`Update articles error: ${error}`))
+  }
+
+  updateCount = (item) => {
     const { feeds } = this.state
     const countIdx = feeds.findIndex(feed => feed.name === item.rssCategory)
     const articleIdx = feeds[countIdx][item.rssFeed].articles.findIndex(article =>
@@ -156,6 +153,8 @@ class Container extends React.Component {
   }
 }
 
+const NoMatch = () => (<div className='container'><h2>Page Not Found</h2></div>)
+
 const Main = (props) => {
   const { feeds } = props
 
@@ -183,9 +182,16 @@ const Main = (props) => {
   )
 }
 
+Main.propTypes = {
+  categories: PropTypes.array.isRequired,
+  feeds: PropTypes.array.isRequired,
+  selectedFeed: PropTypes.object.isRequired,
+  updateCount: PropTypes.func.isRequired,
+  bookmark: PropTypes.string
+}
+
 const contentNode = document.querySelector('#root')
 
-const NoMatch = () => (<div className='container'><h2>Page Not Found</h2></div>)
 const Loading = () => (<div className='container'><h2>Loading from router...</h2></div>)
 
 const ContainerWithRouter = withRouter(Container)

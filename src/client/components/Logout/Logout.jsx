@@ -1,9 +1,10 @@
-/* globals fetch */
+/* globals fetch, window */
+
 import { Glyphicon } from 'react-bootstrap'
 
 import React from 'react'
 
-export const Logout = () => {
+const Logout = () => {
   const logout = (event) => {
     event.preventDefault()
     window.location.replace('/login')
@@ -28,3 +29,5 @@ export const Logout = () => {
     <a onClick={logout} className='btn'><Glyphicon glyph='log-out' /> Logout</a>
   )
 }
+
+export default Logout

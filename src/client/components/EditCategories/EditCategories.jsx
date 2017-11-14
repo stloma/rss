@@ -1,6 +1,7 @@
-/* globals fetch */
+/* globals fetch, document */
 
 import React from 'react'
+import PropTypes from 'prop-types'
 import { Modal } from 'react-bootstrap'
 
 export default class EditCategory extends React.Component {
@@ -23,7 +24,7 @@ export default class EditCategory extends React.Component {
     })
     if (response.ok) {
       this.props.loadFeeds()
-      this.props.editCategories()
+      this.props.editCategoriesProps()
     } else {
       response.json().then((errors) => {
         this.setState({ errors })
@@ -53,8 +54,7 @@ export default class EditCategory extends React.Component {
     } else {
       this.editCategories({
         toDelete,
-        name: form.name.value,
-        _id: this.props._id
+        name: form.name.value
       })
     }
   }
@@ -65,19 +65,19 @@ export default class EditCategory extends React.Component {
       categories = ''
     } else {
       categories = this.props.categories.map(category =>
-        (<div className='checkbox'>
-          <label className='control-label'>Delete</label>
-          <label><input onChange={this.handleCheckbox} type='checkbox' name={category} value='' />{category}</label>
+        (<div key={category} className='checkbox'>
+          <label htmlFor={category} className='control-label'>Delete
+            <input onChange={this.handleCheckbox} type='checkbox' name={category} value='' />{category}
+          </label>
         </div>)
       )
     }
     const delKeys = Object.keys(this.state.toDelete)
-    const deletions = delKeys.map((item, idx) =>
-      <li key={idx}>{item}</li>
-    )
+    const deletions = delKeys.map(item => (<li key={item}>{item}</li>))
+
     return (
       <div>
-        <Modal aria-labelledby='contained-modal-title-lg' onHide={this.props.editCategories} show>
+        <Modal aria-labelledby='contained-modal-title-lg' onHide={this.props.editCategoriesProps} show>
           <Modal.Header closeButton>
             <Modal.Title>Edit Category</Modal.Title>
           </Modal.Header>
@@ -86,7 +86,7 @@ export default class EditCategory extends React.Component {
               <fieldset>
                 {categories}
                 <div className='form-group'>
-                  <label className='control-label'>Add new</label>
+                  <label htmlFor='name' className='control-label'>Add new</label>
                   <input
                     type='text'
                     className='form-control'
@@ -98,7 +98,8 @@ export default class EditCategory extends React.Component {
                       <button type='button' className='close' data-dismiss='alert'>&times;</button>
                       <h4>Delete confirmation</h4>
                       <hr />
-                      You will be deleting the following items, along with all the containing articles:
+                      You will be deleting the following items,
+                      along with all the containing articles:
                       <ul>
                         {deletions}
                       </ul>
@@ -108,7 +109,7 @@ export default class EditCategory extends React.Component {
                   <div className='form-group'>
                     <div className='form-button'>
                       <button
-                        onClick={this.props.editCategories}
+                        onClick={this.props.editCategoriesProps}
                         type='reset'
                         className='btn btn-black'
                       >
@@ -126,4 +127,9 @@ export default class EditCategory extends React.Component {
       </div>
     )
   }
+}
+
+EditCategory.propTypes = {
+  editCategoriesProps: PropTypes.func.isRequired,
+  categories: PropTypes.array.isRequired
 }

@@ -1,6 +1,7 @@
 /* globals fetch */
 
 import React from 'react'
+import PropTypes from 'prop-types'
 import { Glyphicon } from 'react-bootstrap'
 
 export default class Articles extends React.Component {
@@ -11,11 +12,58 @@ export default class Articles extends React.Component {
       status: '',
       favorites: []
     }
-    this.bookmark = this.bookmark.bind(this)
-    this.trash = this.trash.bind(this)
   }
 
-  async bookmark(article) {
+  componentWillReceiveProps = (nextProps) => {
+    const category = nextProps.selectedFeed.category || 'all'
+    const feed = nextProps.selectedFeed.feed || 'all'
+
+    const { feeds } = nextProps
+    const favorites = this.state.articles.favorites || feeds.favorites
+
+    let status = ''
+    let articles = []
+
+    function sortArticles(unsortedArticles) {
+      return unsortedArticles.sort((a, b) => {
+        const adate = a.pubdate ? a.pubdate : a.published
+        const bdate = b.pubdate ? b.pubdate : b.published
+        return new Date(bdate).getTime() - new Date(adate).getTime()
+      })
+    }
+
+    // Determines what category and/or feed is selected and updates
+    // this.state.articles to what's been selected
+    if (category === 'all') {
+      feeds.forEach((categories) => {
+        const feedNames = Object.keys(categories).filter(key => key !== 'name' && key !== 'count')
+        feedNames.forEach((feedName) => {
+          articles = [...articles, ...categories[feedName].articles]
+        })
+      })
+      articles = sortArticles(articles)
+      status = 'All articles, sorted desc by date'
+    } else if (category === 'favorites') {
+      articles = sortArticles(favorites)
+      status = 'Favorited articles'
+    } else if (feed === 'all') {
+      const allFeedsInCategory = feeds.filter(feedName => feedName.name === category)[0]
+      const feedNames = Object.keys(allFeedsInCategory).filter(key => key !== 'name' && key !== 'count')
+      feedNames.forEach((name) => {
+        articles = [...articles, ...allFeedsInCategory[name].articles]
+      })
+      articles = sortArticles(articles)
+      status = `All feeds in ${category} sorted desc by date`
+    } else {
+      articles = feeds.filter(feedArticles => feedArticles.name === category)[0][feed].articles
+      articles = sortArticles(articles)
+      status = `${feed} sorted desc by date`
+    }
+    articles.favorites = favorites
+    this.setState({ articles, status })
+  }
+
+  bookmark = async (article) => {
     try {
       const response = await fetch('/api/bookmark', {
         method: 'POST',
@@ -45,7 +93,7 @@ export default class Articles extends React.Component {
     } catch (error) { console.error(`Failed bookmarking ${article.title}: ${error}`) }
   }
 
-  async trash(item, link, idx) {
+  trash = async (item, link) => {
     const { title, rssCategory, rssFeed } = item
     const data = {
       title,
@@ -67,60 +115,15 @@ export default class Articles extends React.Component {
     } catch (error) { console.error(`Failed bookmarking ${item}: ${error}`) }
   }
 
-  componentWillReceiveProps(nextProps) {
-    const category = nextProps.selectedFeed.category || 'all'
-    const feed = nextProps.selectedFeed.feed || 'all'
-
-    const { feeds } = nextProps
-    const favorites = this.state.articles.favorites || feeds.favorites
-
-    let status = ''
-    let articles = []
-
-    // Determines what category and/or feed is selected and updates
-    // this.state.articles to what's been selected
-    if (category === 'all') {
-      feeds.forEach((categories) => {
-        const feedNames = Object.keys(categories).filter(key => key !== 'name' && key !== 'count')
-        feedNames.forEach((feed) => { articles = [...articles, ...categories[feed].articles] })
-      })
-      articles = sortArticles(articles)
-      status = 'All articles, sorted desc by date'
-    } else if (category === 'favorites') {
-      articles = sortArticles(favorites)
-      status = 'Favorited articles'
-    } else if (feed === 'all') {
-      const allFeedsInCategory = feeds.filter(feed => feed.name === category)[0]
-      const feedNames = Object.keys(allFeedsInCategory).filter(key => key !== 'name' && key !== 'count')
-      feedNames.forEach((name) => { articles = [...articles, ...allFeedsInCategory[name].articles] })
-      articles = sortArticles(articles)
-      status = `All feeds in ${category} sorted desc by date`
-    } else {
-      articles = feeds.filter(feed => feed.name === category)[0][feed].articles
-      articles = sortArticles(articles)
-      status = `${feed} sorted desc by date`
-    }
-    articles.favorites = favorites
-    this.setState({ articles, status })
-
-    function sortArticles(articles) {
-      return articles.sort((a, b) => {
-        const adate = a.pubdate ? a.pubdate : a.published
-        const bdate = b.pubdate ? b.pubdate : b.published
-        return new Date(bdate).getTime() - new Date(adate).getTime()
-      })
-    }
-  }
-
   render() {
     let articles
     if (this.state.articles) {
-      articles = this.state.articles.map((item, idx) => {
+      articles = this.state.articles.map((item) => {
         const bookmark = item.bookmark ? { color: 'green', textShadow: 'none' } : { color: 'white' }
         const link = item.origlink || item.link
         const story = item.description || item.content.text || item.content
         const trashStyle = { color: 'white' }
-        const trash = this.props.selectedFeed.category === 'favorites' ? '' : <Glyphicon style={trashStyle} onClick={() => this.trash(item, link, idx)} glyph='trash' />
+        const trash = this.props.selectedFeed.category === 'favorites' ? '' : <Glyphicon style={trashStyle} onClick={() => this.trash(item, link)} glyph='trash' />
         return (
           <div className='article' key={item.title}>
             <a href={link}><h3>{item.title}</h3></a>
@@ -144,4 +147,10 @@ export default class Articles extends React.Component {
       </div>
     )
   }
+}
+
+Articles.propTypes = {
+  updateCount: PropTypes.func.isRequired,
+  selectedFeed: PropTypes.object.isRequired,
+  feeds: PropTypes.array.isRequired
 }

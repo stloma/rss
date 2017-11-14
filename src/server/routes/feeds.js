@@ -2,9 +2,9 @@ import express from 'express'
 
 import {
   getFeeds, addFeed, addCategory,
-  deleteCategory, refreshArticles, bookmark,
+  deleteCategory, refreshArticles, createBookmark,
   markRead
-} from '../models/db.js'
+} from '../models/db'
 
 const router = express.Router()
 
@@ -27,33 +27,13 @@ router.post('/articles', async (req, res) => {
   // let userDb = req.session.passport.user
   const userDb = 'user1'
 
-  refreshArticles(userDb, category, name, url, (error, result) => {
+  refreshArticles(userDb, category, name, url, (error) => {
     if (error) {
       res.status(500).json({ status: `${url} refresh failure: ${error}` })
     } else {
       res.status(200).json({ status: 'refresh success' })
     }
   })
-
-  /*
-  let promise = new Promise(function (resolve, reject) {
-    refreshArticles(userDb, category, name, url, function (error, result) {
-      if (error) reject(error)
-      resolve(result)
-    })
-  })
-  promise.then(function (data) {
-    console.log(data)
-    getFeeds(userDb, function (error, result) {
-      if (error) {
-        res.status(500).json({ message: `Internal Server Error: ${error}` })
-        throw error
-      }
-      res.status(200).json(data)
-    })
-  })
-  res.status(200).json({ status: 'refreshed articles' })
-  */
 })
 // End called by Router.jsx
 //
@@ -65,7 +45,7 @@ router.post('/editcategories', (req, res) => {
   const { _id, name, toDelete } = req.body
   const userDb = 'user1'
 
-  function cb(result) {
+  function cb() {
     res.status(200).send('1 record inserted')
   }
   if (name) {
@@ -94,11 +74,10 @@ router.post('/bookmark', (req, res) => {
   const newBookmark = req.body
   const userDb = 'user1'
 
-  bookmark(userDb, newBookmark, (error, result) => {
+  createBookmark(userDb, newBookmark, (error, result) => {
     if (error) {
       res.status(500).json({ message: `Internal Server Error: ${error}` })
     }
-    console.log(result)
     res.status(200).json(result)
   })
 })
@@ -136,7 +115,7 @@ router.post('/feeds', (req, res) => {
   */
 
   // addFeed('rssapp', newFeed, function (error, result) {
-  addFeed(userDb, newFeed, (error, result) => {
+  addFeed(userDb, newFeed, (error) => {
     if (error) {
       res.status(500).json({ message: `Internal Server Error: ${error}` })
     }
@@ -144,4 +123,4 @@ router.post('/feeds', (req, res) => {
   })
 })
 
-export { router }
+export default { router }

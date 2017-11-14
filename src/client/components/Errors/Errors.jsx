@@ -1,7 +1,8 @@
 import React from 'react'
-import { Alert, Button } from 'react-bootstrap'
+import PropTypes from 'prop-types'
+import { Alert } from 'react-bootstrap'
 
-export const Errors = props => (
+const Errors = props => (
   <div className='error'>
     {props.errors.map(error =>
       (<Alert key={error} bsStyle='danger' onDismiss={() => props.closeError(error)}>
@@ -10,3 +11,9 @@ export const Errors = props => (
     )}
   </div>
 )
+
+Errors.propTypes = {
+  errors: PropTypes.array.isRequired
+}
+
+export default Errors

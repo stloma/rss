@@ -5,7 +5,7 @@ import path from 'path'
 import session from 'express-session'
 import cookieParser from 'cookie-parser'
 
-import { router as feeds } from './routes/feeds.js'
+import { router as feeds } from './routes/feeds'
 
 SourceMapSupport.install()
 

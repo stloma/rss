@@ -1,4 +1,7 @@
+/* globals window */
+
 import React from 'react'
+import PropTypes from 'prop-types'
 import { Glyphicon } from 'react-bootstrap'
 import ConfirmRead from '../ConfirmRead/ConfirmRead'
 
@@ -11,10 +14,9 @@ export default class Navigation extends React.Component {
       favorites: [],
       confirmRead: false
     }
-    this.markRead = this.markRead.bind(this)
   }
 
-  markRead(confirm) {
+  markRead = (confirm) => {
     this.setState({ confirmRead: !this.state.confirmRead })
     if (confirm.confirm) {
       this.props.markRead()
@@ -44,20 +46,20 @@ export default class Navigation extends React.Component {
             </div>
             <div className='collapse navbar-collapse' id='bs-example-navbar-collapse-2'>
               <ul className='nav navbar-nav'>
-                <li className='pointer' onClick={() => window.location.reload()}><a className='navbar-link'><Glyphicon glyph='refresh' /> Refresh</a></li>
+                <li className='pointer'><a onClick={() => window.location.reload()} className='navbar-link'><Glyphicon glyph='refresh' /> Refresh</a></li>
               </ul>
               <ul className='nav navbar-nav navbar-right'>
-                <li onClick={this.markRead} ><a className='navbar-link' href='#'><Glyphicon glyph='ok' /> Mark as Read</a></li>
+                <li><a onClick={this.markRead} className='navbar-link'><Glyphicon glyph='ok' /> Mark as Read</a></li>
                 <li className='dropdown'>
-                  <a href='#' className='dropdown-toggle' data-toggle='dropdown' role='button' aria-expanded='false'>Actions <span className='caret' /></a>
+                  <a className='dropdown-toggle' data-toggle='dropdown' role='button' aria-expanded='false'>Actions <span className='caret' /></a>
                   <ul className='dropdown-menu' role='menu'>
-                    <li><a href='#'>Action</a></li>
-                    <li><a href='#'>Another action</a></li>
-                    <li><a href='#'>Something else here</a></li>
+                    <li><a>Action</a></li>
+                    <li><a>Another action</a></li>
+                    <li><a>Something else here</a></li>
                     <li className='divider' />
-                    <li><a href='#'>Separated link</a></li>
+                    <li><a>Separated link</a></li>
                     <li className='divider' />
-                    <li><a href='#'>One more separated link</a></li>
+                    <li><a>One more separated link</a></li>
                   </ul>
                 </li>
                 <li>
@@ -75,4 +77,9 @@ export default class Navigation extends React.Component {
       </div>
     )
   }
+}
+
+Navigation.propTypes = {
+  markRead: PropTypes.func.isRequired,
+  selectedFeed: PropTypes.object.isRequired
 }

@@ -1,4 +1,5 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import { Modal } from 'react-bootstrap'
 
 export default class ConfirmRead extends React.Component {
@@ -7,16 +8,14 @@ export default class ConfirmRead extends React.Component {
     this.state = {
       toDelete: {}
     }
-    this.handleSubmit = this.handleSubmit.bind(this)
   }
 
-  handleSubmit(event) {
+  handleSubmit = (event) => {
     event.preventDefault()
   }
 
   render() {
     let { category, feed } = this.props.selectedFeed
-    console.log(category, feed)
 
     category = category || 'all'
     feed = feed || 'all'
@@ -40,4 +39,9 @@ export default class ConfirmRead extends React.Component {
       </div>
     )
   }
+}
+
+ConfirmRead.propTypes = {
+  selectedFeed: PropTypes.object.isRequired,
+  markRead: PropTypes.func.isRequired
 }

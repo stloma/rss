@@ -1,4 +1,5 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import { Glyphicon } from 'react-bootstrap'
 
 import NewFeed from '../NewFeed/NewFeed'
@@ -13,17 +14,14 @@ export default class Sidebar extends React.Component {
       editCategores: false,
       count: {}
     })
-    this.addFeed = this.addFeed.bind(this)
-    this.editCategories = this.editCategories.bind(this)
-    this.delete = this.delete.bind(this)
   }
-  addFeed() {
+  addFeed = () => {
     this.setState({ addFeed: !this.state.addFeed })
   }
-  editCategories() {
+  editCategories = () => {
     this.setState({ editCategories: !this.state.editCategories })
   }
-  delete(e) {
+  delete = (e) => {
     console.log(e)
   }
 
@@ -66,12 +64,12 @@ export default class Sidebar extends React.Component {
                     return (
                       <div className='feed-bar' key={feed} onClick={() => this.props.selectedFeed(category.name, feed)}>
                         <div className='btn-group'>
-                          <a href='#' className='btn dropdown-toggle' data-toggle='dropdown'>
+                          <a className='btn dropdown-toggle' data-toggle='dropdown'>
                             <span className='caret' />
                           </a>
                           <ul className='dropdown-menu'>
-                            <li><a href='#'>Edit</a></li>
-                            <li><a onClick={() => this.delete(feed)} href='#'>Delete</a></li>
+                            <li><a>Edit</a></li>
+                            <li><a onClick={() => this.delete(feed)}>Delete</a></li>
                           </ul>
                         </div>
 
@@ -100,8 +98,8 @@ export default class Sidebar extends React.Component {
           _id={_id}
           addFeed={this.addFeed}
           show={this.state.addFeed}
-          categories={this.props.categories.map((key, idx) =>
-            <option key={idx}>{key}</option>
+          categories={this.props.categories.map(key =>
+            <option key={key}>{key}</option>
           )}
           Fade
           Transition
@@ -111,7 +109,7 @@ export default class Sidebar extends React.Component {
         <EditCategories
           loadFeeds={this.props.loadFeeds}
           _id={_id}
-          editCategories={this.editCategories}
+          editCategoriesProps={this.editCategories}
           show={this.state.editCategories}
           categories={this.props.categories}
           Fade
@@ -120,7 +118,7 @@ export default class Sidebar extends React.Component {
         }
         <a onClick={this.addFeed} className='btn btn-info btn-block pointer'>Subscribe</a>
         <div className='btn-group btn-group-justified'>
-          <a href='#' className='btn btn-default'>New</a>
+          <a className='btn btn-default'>New</a>
           <a onClick={() => this.props.selectedFeed('favorites')} className='btn btn-success'>Favorites</a>
           <a onClick={() => this.props.selectedFeed('all')} className='btn btn-primary'>All</a>
         </div>
@@ -132,4 +130,11 @@ export default class Sidebar extends React.Component {
       </div>
     )
   }
+}
+
+Sidebar.propTypes = {
+  categories: PropTypes.array.isRequired,
+  feeds: PropTypes.array.isRequired,
+  loadFeeds: PropTypes.func.isRequired,
+  selectedFeed: PropTypes.func.isRequired
 }

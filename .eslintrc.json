@@ -1,0 +1,15 @@
+{
+    "extends": "airbnb",
+    "parser": "babel-eslint",
+    "rules": {
+      "comma-dangle": ["error", "never"],
+      "quote-props": ["error", "as-needed", { "numbers": true } ],
+      "semi": ["error", "never"],
+      "jsx-quotes": ["error", "prefer-single"],
+      "no-underscore-dangle": ["error", {"allow": ["_id"]}],
+      "react/forbid-prop-types": [0],
+      "react/jsx-max-props-per-line": [0],
+      "jsx-a11y/no-autofocus": [0],
+      "jsx-a11y/no-static-element-interactions": [0]
+    }
+}
