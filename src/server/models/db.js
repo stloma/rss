@@ -1,7 +1,7 @@
 import session from 'express-session'
 import { MongoClient, ObjectId } from 'mongodb'
 import connectMongo from 'connect-mongodb-session'
-import { fetchFeeds } from '../scripts/get'
+import fetchFeeds from '../scripts/get'
 
 const MongoDBStore = connectMongo(session)
 
@@ -22,10 +22,10 @@ MongoClient.connect('mongodb://localhost/rssapp')
     db.rssDb = connection
   })
   .catch((error) => {
-    console.log(`Error connection to db: ${error}`)
+    console.log(`Error connecting to db: ${error}`)
   })
 
-async function getFeeds(userDb, cb) {
+async function getFeeds(userDb) {
   try {
     const data = await db.rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, slug: 0 })
     if (data === null) {
@@ -37,7 +37,7 @@ async function getFeeds(userDb, cb) {
         read: {},
         metadata: { updated: new Date() }
       })
-      getFeeds(userDb, cb)
+      getFeeds(userDb)
     }
     const finalResult = data
     const ids = []
@@ -61,11 +61,11 @@ async function getFeeds(userDb, cb) {
     })
     finalResult.feeds = feeds
 
-    cb(null, { data: finalResult })
-  } catch (error) { console.log(`Failed getting feeds: ${error}`); cb(error) }
+    return { data: finalResult }
+  } catch (error) { throw (error) }
 }
 
-async function markRead(category, feed, titleParam, link, userDb, cb) {
+async function markRead(category, feed, titleParam, link, userDb) {
   let title = titleParam
   try {
     // Get all category reference ids
@@ -118,12 +118,12 @@ async function markRead(category, feed, titleParam, link, userDb, cb) {
     }
     finalRead = Object.assign({}, finalRead, origReadArticles.read, allReadArticles)
     await db.rssDb.collection(userDb).update({ slug: 'data' }, { $set: { read: finalRead } })
-    cb(null)
-  } catch (error) { console.log(`Failed marking ${category}: ${feed} as read: ${error}`); cb(error) }
+    return 'sucess'
+  } catch (error) { throw error }
 }
 
 // This is called once per feed from Router.jsx
-async function refreshArticles(userDb, category, name, url, cb) {
+async function refreshArticles(userDb, category, name, url) {
   const currentTime = new Date().getTime()
   try {
     await db.rssDb.collection(userDb).update({ slug: 'data' }, { $set: { 'metadata.updated': currentTime } })
@@ -162,11 +162,11 @@ async function refreshArticles(userDb, category, name, url, cb) {
       db.rssDb.collection(userDb).update({ _id }, { $set: { [`${name}.articles`]: articlesFinal } })
     ])
 
-    cb(null)
-  } catch (error) { cb(error) }
+    return null
+  } catch (error) { throw error }
 }
 
-async function createBookmark(userDb, newBookmarkParam, cb) {
+async function createBookmark(userDb, newBookmarkParam) {
   const newBookmark = newBookmarkParam
   const category = newBookmark.rssCategory
   const feed = newBookmark.rssFeed
@@ -198,8 +198,8 @@ async function createBookmark(userDb, newBookmarkParam, cb) {
       await db.rssDb.collection(userDb).update({ slug: 'data' }, { $pull: { favorites: { title } } })
       await db.rssDb.collection(userDb).update({ slug: 'data' }, { $unset: { [`favoritesLookup.${title}`]: link } })
     }
-    cb(null, 'success')
-  } catch (error) { console.log(`Failed creating bookmark: ${error}`); cb(error) }
+    return 'success'
+  } catch (error) { throw error }
 }
 
 function getCategories(cb) {
@@ -209,59 +209,49 @@ function getCategories(cb) {
     })
 }
 
-function addFeed(userDb, feed) {
+async function addFeed(userDb, feed) {
   const { category, name, url } = feed
   // let feedName = name
   const update = { [`categories.${category}`]: 1 }
 
-  db.rssDb.collection(userDb).findOne({ slug: 'data' }, update)
-    .then((result) => {
-      db.rssDb.collection(userDb).update(
-        { _id: result.categories[category] },
-        { $set: { [name]: { articles: [], url, category, updated: new Date() } } }
-      )
-    })
-    .catch(error => console.log(error))
+  try {
+    const result = await db.rssDb.collection(userDb).findOne({ slug: 'data' }, update)
+    await db.rssDb.collection(userDb).update(
+      { _id: result.categories[category] },
+      { $set: { [name]: { articles: [], url, category, updated: new Date() } } }
+    )
+    return 'success'
+  } catch (error) { throw error }
 }
 
-function addCategory(userDb, category, _id, cb) {
+async function addCategory(userDb, category) {
   const reference = new ObjectId()
 
   const newCategory = { [`categories.${category}`]: reference }
 
-  db.rssDb.collection(userDb).insert({ _id: reference, name: category })
-
-  db.rssDb.collection(userDb).update({ slug: 'data' }, {
-    $set: newCategory
-  },
-  (err, result) => {
-    if (err) {
-      cb(err)
-    } else {
-      cb(null, result)
-    }
-  }
-  )
+  try {
+    await db.rssDb.collection(userDb).insert({ _id: reference, name: category })
+    await db.rssDb.collection(userDb).update({ slug: 'data' }, { $set: newCategory })
+    return newCategory
+  } catch (error) { throw error }
 }
 
-function deleteCategory(dbname, toDelete, _id, cb) {
-  const id = new ObjectId(_id)
+async function deleteCategory(userDb, toDelete) {
+  let promises = []
+  try {
+    toDelete.forEach(async (category) => {
+      let catId = await db.rssDb.collection(userDb).findOne({ name: category }, { _id: 1 })
+      catId = new ObjectId(catId._id)
 
-  toDelete.forEach((category) => {
-    const query = {}
-    query[toDelete[category]] = ''
-    db.rssDb.collection('feeds').update({ _id: id }, {
-      $unset: query
-    },
-    (err, result) => {
-      if (err) {
-        cb(err)
-      } else {
-        cb(null, result)
-      }
-    }
-    )
-  })
+      const categoryName = `categories.${category}`
+      const query = { [categoryName]: '' }
+
+      const p1 = await db.rssDb.collection(userDb).update({ slug: 'data' }, { $unset: query })
+      const p2 = await db.rssDb.collection(userDb).deleteOne({ _id: catId })
+      promises = [...promises, p1, p2]
+    })
+  } catch (error) { console.log(error) }
+  return Promise.all(promises)
 }
 
 export {

@@ -10,32 +10,27 @@ export default class AddFeed extends React.Component {
     this.state = {
       username: ''
     }
-    this.handleSubmit = this.handleSubmit.bind(this)
   }
 
-  createFeed(newFeed) {
-    fetch('/api/feeds', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newFeed),
-      credentials: 'include'
-    })
-      .then((response) => {
-        if (response.ok) {
-          this.props.loadFeeds()
-          this.props.addFeed()
-        } else {
-          response.json().then((errors) => {
-            this.setState({ errors })
-          })
-        }
+  createFeed = async (newFeed) => {
+    try {
+      const response = await fetch('/api/feeds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newFeed),
+        credentials: 'include'
       })
-      .catch((err) => {
-        console.log(`Error in sending data to server: ${err.message}`)
-      })
+      if (response.ok) {
+        this.props.loadFeeds()
+        this.props.addFeed()
+      } else {
+        const errors = await response.json()
+        this.setState({ errors })
+      }
+    } catch (err) { console.log(`Error in sending data to server: ${err.message}`) }
   }
 
-  handleSubmit(event) {
+  handleSubmit = (event) => {
     event.preventDefault()
     const form = document.forms.FeedAdd
 

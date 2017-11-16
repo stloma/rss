@@ -18,7 +18,7 @@ export default class Sidebar extends React.Component {
   addFeed = () => {
     this.setState({ addFeed: !this.state.addFeed })
   }
-  editCategories = () => {
+  toggleEditCategories = () => {
     this.setState({ editCategories: !this.state.editCategories })
   }
   delete = (e) => {
@@ -109,7 +109,7 @@ export default class Sidebar extends React.Component {
         <EditCategories
           loadFeeds={this.props.loadFeeds}
           _id={_id}
-          editCategoriesProps={this.editCategories}
+          toggleEditCategories={this.toggleEditCategories}
           show={this.state.editCategories}
           categories={this.props.categories}
           Fade
@@ -126,7 +126,7 @@ export default class Sidebar extends React.Component {
         <div className='panel-group' id='accordion'>
           {groups}
         </div>
-        <div onClick={this.editCategories} className='pointer' id='add-category'><Glyphicon glyph='plus' /> Add/Edit categories</div>
+        <div onClick={this.toggleEditCategories} className='pointer' id='add-category'><Glyphicon glyph='plus' /> Add/Edit categories</div>
       </div>
     )
   }

@@ -123,7 +123,8 @@ export default class Articles extends React.Component {
         const link = item.origlink || item.link
         const story = item.description || item.content.text || item.content
         const trashStyle = { color: 'white' }
-        const trash = this.props.selectedFeed.category === 'favorites' ? '' : <Glyphicon style={trashStyle} onClick={() => this.trash(item, link)} glyph='trash' />
+        const trash = this.props.selectedFeed.category === 'favorites' ?
+          '' : <Glyphicon style={trashStyle} onClick={() => this.trash(item, link)} glyph='trash' />
         return (
           <div className='article' key={item.title}>
             <a href={link}><h3>{item.title}</h3></a>

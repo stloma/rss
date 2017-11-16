@@ -24,11 +24,10 @@ export default class EditCategory extends React.Component {
     })
     if (response.ok) {
       this.props.loadFeeds()
-      this.props.editCategoriesProps()
+      this.props.toggleEditCategories()
     } else {
-      response.json().then((errors) => {
-        this.setState({ errors })
-      })
+      const errors = await response.json()
+      this.setState({ errors })
     }
   }
 
@@ -77,7 +76,7 @@ export default class EditCategory extends React.Component {
 
     return (
       <div>
-        <Modal aria-labelledby='contained-modal-title-lg' onHide={this.props.editCategoriesProps} show>
+        <Modal aria-labelledby='contained-modal-title-lg' onHide={this.props.toggleEditCategories} show>
           <Modal.Header closeButton>
             <Modal.Title>Edit Category</Modal.Title>
           </Modal.Header>
@@ -109,7 +108,7 @@ export default class EditCategory extends React.Component {
                   <div className='form-group'>
                     <div className='form-button'>
                       <button
-                        onClick={this.props.editCategoriesProps}
+                        onClick={this.props.toggleEditCategories}
                         type='reset'
                         className='btn btn-black'
                       >
@@ -130,6 +129,6 @@ export default class EditCategory extends React.Component {
 }
 
 EditCategory.propTypes = {
-  editCategoriesProps: PropTypes.func.isRequired,
+  toggleEditCategories: PropTypes.func.isRequired,
   categories: PropTypes.array.isRequired
 }
