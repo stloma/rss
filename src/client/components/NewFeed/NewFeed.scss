@@ -1,0 +1,53 @@
+#select-category {
+  margin-top: 14px;
+  margin-bottom: 14px;
+}
+
+#feed-examples {
+  margin-top: -15px;
+  h5 {
+    cursor: pointer;
+    font-size: 16px;
+    text-align: center;
+  }
+  h5:hover {
+  }
+  a {
+    display: block;
+    cursor: pointer;
+  }
+  .panel-title .glyphicon {
+    float: right;
+    top: 5px;
+  }
+  .panel-body {
+    padding: 8px;
+    background-color: #fdfdfd;
+  }
+}
+
+#add-category {
+  text-align: center;
+  background-color: #f7f7f7;
+  padding: 5px;
+}
+#add-category:hover {
+  background-color: #ccc;
+}
+#add-category h5 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #666;
+}
+#add-feed {
+  max-width: 500px;
+  margin-top: 2em;
+}
+#add-feed input {
+  margin-bottom: 8px;
+}
+#add-feed button {
+  margin-right: 8px;
+  margin-top: 1em;
+}
+

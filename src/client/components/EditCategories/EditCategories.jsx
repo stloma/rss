@@ -65,7 +65,7 @@ export default class EditCategory extends React.Component {
     } else {
       categories = this.props.categories.map(category =>
         (<div key={category} className='checkbox'>
-          <label htmlFor={category} className='control-label'>Delete
+          <label htmlFor={category} className='control-label'>
             <input onChange={this.handleCheckbox} type='checkbox' name={category} value='' />{category}
           </label>
         </div>)
@@ -83,6 +83,7 @@ export default class EditCategory extends React.Component {
           <div className='container' id='add-feed'>
             <form method='post' name='CategoryEdit' onSubmit={this.handleSubmit}>
               <fieldset>
+                <b>Delete</b>
                 {categories}
                 <div className='form-group'>
                   <label htmlFor='name' className='control-label'>Add new</label>
@@ -90,6 +91,7 @@ export default class EditCategory extends React.Component {
                     type='text'
                     className='form-control'
                     name='name'
+                    autoFocus
                     placeholder='Name'
                   />
                   {delKeys.length > 0 &&
@@ -110,7 +112,7 @@ export default class EditCategory extends React.Component {
                       <button
                         onClick={this.props.toggleEditCategories}
                         type='reset'
-                        className='btn btn-black'
+                        className='btn btn-default'
                       >
                             Cancel
                       </button>

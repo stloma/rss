@@ -3,7 +3,7 @@ import express from 'express'
 import {
   getFeeds, addFeed, addCategory,
   deleteCategory, refreshArticles, createBookmark,
-  markRead
+  markRead, deleteFeed
 } from '../models/db'
 
 const feeds = express.Router()
@@ -93,9 +93,20 @@ feeds.post('/feeds', async (req, res) => {
 
   // addFeed('rssapp', newFeed, function (error, result) {
   try {
-    await addFeed(userDb, newFeed)
-    res.status(200).send('1 record inserted')
+    const response = await addFeed(userDb, newFeed)
+    if (response === 'success') {
+      res.status(200).send('1 record inserted')
+    } else {
+      res.status(400).json({ error: response })
+    }
   } catch (error) { res.status(500).json({ message: `Internal Server Error: ${error}` }) }
+})
+
+feeds.delete('/feeds', async (req, res) => {
+  const userDb = 'user1'
+  const { category, feed } = req.body
+  const response = await deleteFeed(userDb, category, feed)
+  res.status(200).json({ message: 'success' })
 })
 
 export default feeds

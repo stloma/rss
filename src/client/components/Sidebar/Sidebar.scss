@@ -1,0 +1,131 @@
+#sidebar {
+  display: block;
+  width: 25%;
+  top: 65px;
+  bottom: 0px;
+  position: fixed;
+  border: 1px solid #ccc;
+  background-color: #fdfdfd;
+
+  z-index: 99;
+
+  .glyphicon-remove-sign {
+    left: 90%;
+    color: white;
+  }
+  .glyphicon-remove {
+    left: 90%;
+    color: white;
+  }
+}
+#sidebar .btn {
+  border-radius: 0;
+}
+#toggle-sidebar {
+  font-size: 20px;
+  cursor: pointer;
+  p {
+    display: inline;
+    margin-left: 10px;
+    font-size: 15px;
+  }
+  .glyphicon-forward {
+    position: relative;
+    left: 305px;
+    top: 3px;
+  }
+}
+#toggle-sidebar:hover {
+  color: grey;
+  text-decoration: underline;
+}
+#hide-sidebar {
+  display: block;
+  width: 300px;
+  top: 63px;
+  bottom: 0px;
+  left: -300px;
+  position: fixed;
+  transition: left 2s;
+}
+#subscribe-button {
+  background-color: #007bff;
+  color: white;
+  margin-bottom: 2px;
+}
+#categories-button {
+  background-color: #772953;
+  color: white;
+}
+#favorites-button {
+  background-color: #38b44a;
+  color: white;
+}
+#all-button {
+  background-color: #efb73e;
+  color: white;
+}
+
+.panel-group {
+  border-radius: 0 !important;
+  border: 0 !important;
+  margin-top: 4px;
+
+  .panel {
+    border-radius: 0;
+    margin: 0;
+    padding: 0;
+  }
+  .panel-heading {
+    margin: 0;
+    padding: 0;
+  }
+  .panel-title {
+    margin: 0;
+    padding: 0;
+  }
+  .panel-title a:hover {
+    text-decoration: none;
+  }
+  .panel-title a h5 {
+    margin: 0;
+    padding: 12px;
+  }
+  .panel-title a h5:hover {
+    background-color: #d7d7d7;
+  }
+}
+.panel-body {
+  display: inline;
+  padding: 0;
+}
+.feed-bar-wrapper {
+  padding: 12px 10px;
+  &:hover {
+    background-color: #d7d7d7;
+    .dropdown button {
+      background-color: #d7d7d7;
+    }
+  }
+  .dropdown button {
+    background-color: inherit !important;
+    box-shadow: none !important;
+    border: 0;
+    margin-right: 8px;
+  }
+}
+
+.dropdown-toggle {
+  padding: 0;
+  margin: 0;
+}
+
+.category-badge {
+  float: right;
+}
+.feed-badge {
+  float: right;
+}
+.directory-title {
+  color: inherit;
+}

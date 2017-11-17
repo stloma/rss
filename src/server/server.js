@@ -29,8 +29,8 @@ app.use(session({
 
 app.use('/api', feeds)
 
-app.listen(3000, '127.0.0.1', () => {
-  console.log('App started on port 3000')
+app.listen(3002, '127.0.0.1', () => {
+  console.log('App started on port 3002')
 })
 
 app.get('*', (req, res) => {

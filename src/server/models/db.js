@@ -1,6 +1,7 @@
 import session from 'express-session'
 import { MongoClient, ObjectId } from 'mongodb'
 import connectMongo from 'connect-mongodb-session'
+import { uniqBy } from 'lodash'
 import fetchFeeds from '../scripts/get'
 
 const MongoDBStore = connectMongo(session)
@@ -77,7 +78,6 @@ async function markRead(category, feed, titleParam, link, userDb) {
 
     // Assign category id, this assumes only marking one category as read
     catIds = Object.values(catIds.categories)
-    let finalRead = {}
     let allReadArticles = {}
     const origReadArticles = await db.rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, read: 1 })
 
@@ -92,8 +92,7 @@ async function markRead(category, feed, titleParam, link, userDb) {
 
     // For each category by document reference
     } else {
-      catIds.forEach(async (catId) => {
-        // Get articles, one feed/s per category
+      for (const catId of catIds) {
         const getArticles = feed === 'all' ? { _id: 0 } : { _id: 0, [`${feed}.articles`]: 1 }
         const articles = await db.rssDb.collection(userDb).findOne({
           _id: new ObjectId(catId) }, getArticles)
@@ -101,38 +100,47 @@ async function markRead(category, feed, titleParam, link, userDb) {
         let readArticles = []
 
         // For each feed
-        feeds.forEach(async (eachFeed) => {
+        const promises = feeds.map((eachFeed) => {
           readArticles = [...readArticles, ...articles[eachFeed].articles]
-          await db.rssDb.collection(userDb).update(
+          return db.rssDb.collection(userDb).update(
             { _id: new ObjectId(catId) },
             { $set: { [`${eachFeed}.articles`]: [], [`${eachFeed}.metadata.count`]: 0 } }
           )
         })
+
+        await Promise.all(promises)
+
         // Replace periods and dollar signs so article titles can be stored as
         // keys for quick lookup
         readArticles.forEach((article) => {
           const newTitle = article.title.replace(/\.|\$/g, '_')
           allReadArticles[newTitle] = article.link
         })
-      })
+      }
     }
-    finalRead = Object.assign({}, finalRead, origReadArticles.read, allReadArticles)
+    const finalRead = Object.assign({}, origReadArticles.read, allReadArticles)
     await db.rssDb.collection(userDb).update({ slug: 'data' }, { $set: { read: finalRead } })
-    return 'sucess'
+    return 'success'
   } catch (error) { throw error }
 }
 
 // This is called once per feed from Router.jsx
 async function refreshArticles(userDb, category, name, url) {
-  const currentTime = new Date().getTime()
   try {
+    // Set time updated
+    const currentTime = new Date().getTime()
     await db.rssDb.collection(userDb).update({ slug: 'data' }, { $set: { 'metadata.updated': currentTime } })
 
     // Get document reference for the category
     const res = await db.rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, slug: 0 })
     const _id = new ObjectId(res.categories[category])
 
-    const articles = await fetchFeeds(url)
+    let articles = await fetchFeeds(url)
+    let currentArticles = await db.rssDb.collection(userDb).findOne({
+      _id }, { _id: 0, [`${name}.articles`]: 1 })
+    currentArticles = currentArticles[name].articles
+    articles = [...articles, ...currentArticles]
+    articles = uniqBy(articles, 'title')
 
     // Get hash maps for looking up articles that are marked as read and favorites
     const fav = await db.rssDb.collection(userDb).findOne({ slug: 'data' }, { _id: 0, favoritesLookup: 1 })
@@ -142,8 +150,9 @@ async function refreshArticles(userDb, category, name, url) {
 
     // Check if articles were previsouly marked as read. Storing a key with a .
     // or $ is not allowed in mongo, so do a string replacement for those chars
-    const articlesFinal = []
+    let articlesFinal = []
     // for (const article of articles) {
+
     articles.forEach((articleParam) => {
       const article = articleParam
       const title = article.title.replace(/\.|\$/g, '_')
@@ -156,6 +165,7 @@ async function refreshArticles(userDb, category, name, url) {
         articlesFinal.push(article)
       }
     })
+    articlesFinal = [...articlesFinal]
     const count = articlesFinal.length
     await Promise.all([
       db.rssDb.collection(userDb).update({ _id }, { $set: { [`${name}.count`]: count } }),
@@ -211,13 +221,14 @@ function getCategories(cb) {
 
 async function addFeed(userDb, feed) {
   const { category, name, url } = feed
+
   // let feedName = name
   const update = { [`categories.${category}`]: 1 }
 
   try {
     const result = await db.rssDb.collection(userDb).findOne({ slug: 'data' }, update)
     await db.rssDb.collection(userDb).update(
-      { _id: result.categories[category] },
+      { _id: new ObjectId(result.categories[category]) },
       { $set: { [name]: { articles: [], url, category, updated: new Date() } } }
     )
     return 'success'
@@ -254,7 +265,21 @@ async function deleteCategory(userDb, toDelete) {
   return Promise.all(promises)
 }
 
+async function deleteFeed(userDb, category, feed) {
+  try {
+    const filter = { _id: 0, [`categories.${category}`]: 1 }
+    let _id = await db.rssDb.collection(userDb).findOne(
+      { slug: 'data' },
+      filter
+    )
+    _id = new ObjectId(_id.categories[category])
+    const res = await db.rssDb.collection(userDb).update({ _id }, { $unset: { [feed]: '' } })
+    console.log(res)
+    return 'success'
+  } catch (error) { console.log(error) }
+}
+
 export {
   markRead, createBookmark, db, store, getFeeds, getCategories, refreshArticles,
-  addFeed, addCategory, deleteCategory
+  addFeed, addCategory, deleteCategory, deleteFeed
 }

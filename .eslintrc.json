@@ -1,11 +1,21 @@
 {
+  "env": {
+    "browser": true
+  },
     "extends": "airbnb",
     "parser": "babel-eslint",
+    "plugins": ["compat"],
+    "settings": {
+      "polyfills": ["fetch"]
+    },
     "rules": {
+      "compat/compat": "error",
       "comma-dangle": ["error", "never"],
       "quote-props": ["error", "as-needed", { "numbers": true } ],
       "semi": ["error", "never"],
       "jsx-quotes": ["error", "prefer-single"],
+      "no-await-in-loop": [0],
+      "no-restricted-syntax": [0],
       "no-underscore-dangle": ["error", {"allow": ["_id"]}],
       "react/forbid-prop-types": [0],
       "react/jsx-max-props-per-line": [0],

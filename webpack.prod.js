@@ -4,7 +4,7 @@ const path = require('path')
 module.exports = {
   entry: {
     app: ['babel-polyfill', './src/client/components/Router/Router.jsx', './src/client/styles/base.scss'],
-    vendor: ['react', 'react-dom', 'react-router', 'react-bootstrap', 'react-router-bootstrap']
+    vendor: ['react', 'react-dom', 'react-router', 'react-bootstrap']
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -40,7 +40,6 @@ module.exports = {
         NODE_ENV: JSON.stringify('production')
       }
     }),
-    new webpack.optimize.ModuleConcatenationPlugin(),
     new webpack.optimize.AggressiveMergingPlugin()
   ],
   devtool: 'source-map',

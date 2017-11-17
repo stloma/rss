@@ -2,13 +2,15 @@
 
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Modal } from 'react-bootstrap'
+import { Glyphicon, Modal, Panel } from 'react-bootstrap'
 
 export default class AddFeed extends React.Component {
   constructor() {
     super()
     this.state = {
-      username: ''
+      username: '',
+      open: false,
+      feed: { url: '' }
     }
   }
 
@@ -30,6 +32,14 @@ export default class AddFeed extends React.Component {
     } catch (err) { console.log(`Error in sending data to server: ${err.message}`) }
   }
 
+  handleChange = (event) => {
+    if (typeof event === 'string') this.setState({ feed: { url: event } })
+    else {
+      const value = event.target
+      this.setState({ feed: { [value]: value } })
+    }
+  }
+
   handleSubmit = (event) => {
     event.preventDefault()
     const form = document.forms.FeedAdd
@@ -42,6 +52,26 @@ export default class AddFeed extends React.Component {
   }
 
   render() {
+    const urls = [
+      { name: 'Wired', url: 'https://www.wired.com/feed/rss' },
+      { name: 'Webdev', url: 'https://www.reddit.com/r/webdev/.rss' },
+      { name: 'LifeHacker', url: 'https://lifehacker.com/rss' },
+      { name: 'Debian Security', url: 'https://www.debian.org/security/dsa' },
+      { name: 'Css tricks', url: 'http://feeds.feedburner.com/CssTricks' },
+      { name: 'Seattle Times', url: 'https://www.seattletimes.com/feed/' },
+      { name: 'BBC', url: 'http://feeds.bbci.co.uk/news/world/rss.xml' },
+      { name: 'Serious eats', url: 'http://feeds.feedburner.com/seriouseats/recipes?format=xml' }
+    ]
+
+    const urlWrapper = url => (
+      <span key={url.url}> {url.name}
+        <a onClick={() => this.handleChange(url.url)}>{url.url}</a>
+      </span>
+    )
+
+    const exampleUrls = urls.map(url => urlWrapper(url))
+
+    const panelHeader = <div>Examples <Glyphicon glyph='triangle-bottom' /></div>
     return (
       <div>
         <Modal aria-labelledby='contained-modal-title-lg' onHide={this.props.addFeed} show>
@@ -49,6 +79,17 @@ export default class AddFeed extends React.Component {
             <Modal.Title>New Feed</Modal.Title>
           </Modal.Header>
           <div className='container' id='add-feed'>
+            <div id='feed-examples'>
+              <Panel
+                header={panelHeader}
+                collapsible
+                expanded={this.state.open}
+                bsStyle='info'
+                onClick={() => this.setState({ open: !this.state.open })}
+              >
+                {exampleUrls}
+              </Panel>
+            </div>
             <form method='post' name='FeedAdd' onSubmit={this.handleSubmit}>
               <fieldset>
                 <div className='form-group'>
@@ -58,16 +99,19 @@ export default class AddFeed extends React.Component {
                     className='form-control'
                     name='name'
                     placeholder='Name'
+                    required
                   />
                   <label htmlFor='url' className='control-label'>Url</label>
                   <input
                     type='text'
                     className='form-control'
+                    required
                     name='url'
                     placeholder='cnn.com'
+                    onChange={this.handleChange}
+                    value={this.state.feed.url}
                   />
-                  <select className='form-control' name='category' id='select'>
-                    <option>-- Select Category --</option>
+                  <select className='form-control' name='category' id='select-category'>
                     {this.props.categories}
                   </select>
                   <div className='form-group'>
@@ -75,7 +119,7 @@ export default class AddFeed extends React.Component {
                       <button
                         onClick={this.props.addFeed}
                         type='reset'
-                        className='btn btn-black'
+                        className='btn btn-default'
                       >
                             Cancel
                       </button>

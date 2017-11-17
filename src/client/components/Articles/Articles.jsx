@@ -42,7 +42,7 @@ export default class Articles extends React.Component {
         })
       })
       articles = sortArticles(articles)
-      status = 'All articles, sorted desc by date'
+      status = 'All articles'
     } else if (category === 'favorites') {
       articles = sortArticles(favorites)
       status = 'Favorited articles'
@@ -53,11 +53,11 @@ export default class Articles extends React.Component {
         articles = [...articles, ...allFeedsInCategory[name].articles]
       })
       articles = sortArticles(articles)
-      status = `All feeds in ${category} sorted desc by date`
+      status = `All feeds in ${category}`
     } else {
       articles = feeds.filter(feedArticles => feedArticles.name === category)[0][feed].articles
       articles = sortArticles(articles)
-      status = `${feed} sorted desc by date`
+      status = `${feed}`
     }
     articles.favorites = favorites
     this.setState({ articles, status })
@@ -138,13 +138,12 @@ export default class Articles extends React.Component {
         )
       }
       )
-    } else {
-      articles = <h3>Loading articles...</h3>
     }
     return (
       <div>
-        <h4 className='article-heading'>{this.state.status}</h4>
-        <div id='articles'>{articles}</div>
+        <div id='articles'>
+          <h4 className='article-heading'>{this.state.status}</h4>
+          {articles}</div>
       </div>
     )
   }

@@ -1,0 +1,45 @@
+#articles {
+  margin: 15px;
+  background-color: #f7f7f7;
+  max-width: 950px;
+}
+
+.article {
+  padding: 30px;
+  margin-bottom: 15px;
+  max-width: 900px;
+  background-color: #fdfdfd;
+  border: 1px solid #DCDCDC;
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+.article-buttons {
+  float: right;
+}
+
+.article-buttons span {
+  margin: 4px;
+  font-size: 16px;
+  transition: all .2s ease-in-out;
+  text-shadow: -.5px 0 black, 0 .5px black, 1px 0 black, 0 -.5px black;
+}
+
+.article-buttons span:hover {
+  color: green !important;
+  text-shadow: none;
+  transform: scale(1.1);
+}
+
+.article-heading {
+  text-align: center;
+  max-width: 900px;
+  background-color: #fdfdfd;
+  padding: 1em;
+  margin-top: -10px;
+  border: 1px solid #DCDCDC;
+}
+

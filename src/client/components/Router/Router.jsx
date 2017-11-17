@@ -16,7 +16,8 @@ class Container extends React.Component {
       feeds: [],
       categories: [],
       selectedFeed: {},
-      favorites: []
+      favorites: [],
+      showSidebar: true
     }
   }
 
@@ -48,6 +49,17 @@ class Container extends React.Component {
     } catch (error) { console.error(`Mark read failure: ${error}`) }
   }
 
+  deleteFeed = async (category, feed) => {
+    const data = { category, feed }
+    const fetchData = {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+      credentials: 'include'
+    }
+    await fetch('/api/feeds', fetchData)
+    console.log(this.state)
+  }
 
   // loads feeds from database without fetching from external sources
   loadFeeds = async (updated = false) => {
@@ -126,18 +138,26 @@ class Container extends React.Component {
     this.setState({ feeds })
   }
 
+  toggleSidebar = () => {
+    this.setState({ showSidebar: !this.state.showSidebar })
+  }
+
   render() {
     return (
-      <div>
+      <div id='big-wrapper'>
         <Navigation
           markRead={this.markRead}
           selectedFeed={this.state.selectedFeed}
+          toggleSidebar={this.toggleSidebar}
         />
         <Sidebar
           feeds={this.state.feeds}
           loadFeeds={this.loadFeeds}
           categories={this.state.categories}
           selectedFeed={this.selectedFeed}
+          showSidebar={this.state.showSidebar}
+          toggleSidebar={this.toggleSidebar}
+          deleteFeed={this.deleteFeed}
         />
         <div id='content'>
           <Main
@@ -192,7 +212,7 @@ Main.propTypes = {
 
 const contentNode = document.querySelector('#root')
 
-const Loading = () => (<div className='container'><h2>Loading from router...</h2></div>)
+const Loading = () => (<div className='container'><h2>Welcome to RSS!</h2></div>)
 
 const ContainerWithRouter = withRouter(Container)
 ReactDOM.render(<Router><ContainerWithRouter /></Router>, contentNode)

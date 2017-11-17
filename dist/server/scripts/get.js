@@ -3,46 +3,40 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-var FeedMe = require('feedme');
-var http = require('http');
-var https = require('https');
+var FeedParser = require('feedparser');
+var request = require('request');
 
-function fetchFeeds(url, cb) {
-  if (url.startsWith('https:')) {
-    https.get(url, function (res) {
-      var parser = new FeedMe(true);
-      res.pipe(parser);
-      parser.on('end', function () {
-        cb(null, parser.done());
-      });
-    }).on('error', function (e) {
-      console.log(e.message);
+function fetchFeeds(url) {
+  return new Promise(function (resolve, reject) {
+    var feedparser = new FeedParser();
+
+    request({ method: 'GET', url: url }, function (e, res, body) {
+      if (e) {
+        return reject(e);
+      }
+      if (res.statusCode !== 200) {
+        return reject(new Error('Bad status code (status: ' + res.statusCode + ', url: ' + url + ')'));
+      }
+      feedparser.end(body);
     });
-  } else if (url.startsWith('http:')) {
-    http.get(url, function (res) {
-      var parser = new FeedMe(true);
-      res.pipe(parser);
-      parser.on('end', function () {
-        cb(null, parser.done());
-      });
-    }).on('error', function (e) {
-      console.log(e.message);
+
+    feedparser.on('error', function (error) {
+      reject(error);
     });
-  }
+
+    var articles = [];
+    feedparser.on('readable', function () {
+      var article = feedparser.read();
+
+      while (article) {
+        articles.push(article);
+        article = feedparser.read();
+      }
+    }).on('end', function () {
+      resolve(articles);
+    });
+  });
 }
 
-/*
-updateFeeds('http://127.0.0.1/rss/lifehacker.rss', function (err, res) {
-if (err) throw err
-res.items.map(item => console.log(item.pubdate))
-// console.log(res.title, res.link)
-})
-*/
-
-/*
- * https://www.wired.com/feed/category/science/latest/rss
- * https://news.ycombinator.com/rss
-*/
-
-exports.fetchFeeds = fetchFeeds;
+exports.default = fetchFeeds;
 //# sourceMappingURL=get.js.map
