@@ -21,8 +21,12 @@
     top: 5px;
   }
   .panel-body {
-    padding: 8px;
     background-color: #fdfdfd;
+
+    span {
+      display: block;
+      padding: 8px;
+    }
   }
 }
 

@@ -9,14 +9,6 @@
 
   z-index: 99;
 
-  .glyphicon-remove-sign {
-    left: 90%;
-    color: white;
-  }
-  .glyphicon-remove {
-    left: 90%;
-    color: white;
-  }
 }
 #sidebar .btn {
   border-radius: 0;
@@ -29,9 +21,9 @@
     margin-left: 10px;
     font-size: 15px;
   }
-  .glyphicon-forward {
+  .glyphicon-th-list {
     position: relative;
-    left: 305px;
+    left: 322px;
     top: 3px;
   }
 }
@@ -90,6 +82,7 @@
   .panel-title a h5 {
     margin: 0;
     padding: 12px;
+    cursor: pointer;
   }
   .panel-title a h5:hover {
     background-color: #d7d7d7;
@@ -101,6 +94,7 @@
 }
 .feed-bar-wrapper {
   padding: 12px 10px;
+  cursor: pointer;
   &:hover {
     background-color: #d7d7d7;
     .dropdown button {
@@ -113,6 +107,10 @@
     border: 0;
     margin-right: 8px;
   }
+}
+
+#feed-link-loader {
+  display: inline-block;
 }
 
 .dropdown-toggle {
@@ -129,3 +127,20 @@
 .directory-title {
   color: inherit;
 }
+
+@media screen and (min-width: 1250px) {
+  #sidebar {
+    width: 300px;
+  }
+}
+
+@media screen and (min-width: 1001px) {
+  #toggle-sidebar span.glyphicon-backward {
+    display: none;
+
+    & + p {
+      display: none;
+    }
+  }
+}
+

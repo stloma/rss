@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { DropdownButton, MenuItem, Glyphicon, PanelGroup, Panel } from 'react-bootstrap'
 
+import Loading from '../Loading/Loading'
 import NewFeed from '../NewFeed/NewFeed'
 import EditCategories from '../EditCategories/EditCategories'
 
@@ -30,12 +31,16 @@ export default class Sidebar extends React.Component {
     if (!categories) {
       groups = <h3 className='text-center'>create a new feed!</h3>
     } else {
-      groups = feeds.map((category) => {
-        const keys = Object.keys(category).filter(key => key !== 'name' && key !== 'count')
+      groups = feeds.map((category, idx) => {
+        const headerKey = category.name || idx
+        const keys = Object.keys(category).filter(key => key !== 'name' && key !== 'count' && key !== '')
         const header =
           (<div onClick={() => this.props.selectedFeed(category.name)}>
             <h5>
-              {category.name}
+              {
+                category.name ||
+                <div id='feed-link-loader'><Loading type='spinningBubbles' height='15px' width='15px' /></div>
+              }
               <span className='category-badge'>
                 {category.count > 0 ? category.count : 0}
               </span>
@@ -44,9 +49,8 @@ export default class Sidebar extends React.Component {
         return (
           <Panel
             collapsible
-            expanded
             header={header}
-            key={category.name}
+            key={headerKey}
           >
             {keys ? (
               keys.map((feed) => {
@@ -61,7 +65,7 @@ export default class Sidebar extends React.Component {
                     onClick={() => this.props.selectedFeed(category.name, feed)}
                   >
                     <DropdownButton title='' id='bg-nested-dropdown'>
-                      <MenuItem>Edit</MenuItem>
+                      {/* <MenuItem>Edit</MenuItem> */}
                       <MenuItem onClick={() => this.props.deleteFeed(category.name, feed)}>
                         Delete
                       </MenuItem>
@@ -90,7 +94,7 @@ export default class Sidebar extends React.Component {
       </span>
     ) : (
       <span onClick={this.props.toggleSidebar} id='toggle-sidebar'>
-        <Glyphicon glyph='forward' />
+        <Glyphicon glyph='th-list' />
       </span>
     )
     return (

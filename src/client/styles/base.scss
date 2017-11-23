@@ -3,6 +3,10 @@
 @import '../components/Sidebar/Sidebar';
 @import '../components/NewFeed/NewFeed';
 @import '../components/EditCategories/EditCategories';
+@import '../components/Login/Login';
+@import '../components/Register/Register';
+@import '../components/Alerts/Alerts';
+@import '../components/Router/Router';
 
 body {
   padding-top: 4.2em;
@@ -27,12 +31,6 @@ body {
   float: right;
   width: 75%;
   margin: auto;
-}
-
-@media screen and (min-width: 1250px) {
-  #sidebar {
-    width: 300px;
-  }
 }
 
 @media screen and (max-width: 1000px) {

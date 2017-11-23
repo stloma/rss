@@ -125,15 +125,22 @@ export default class Articles extends React.Component {
         const trashStyle = { color: 'white' }
         const trash = this.props.selectedFeed.category === 'favorites' ?
           '' : <Glyphicon style={trashStyle} onClick={() => this.trash(item, link)} glyph='trash' />
+        const date = new Date(item.pubdate || item.published).toUTCString()
         return (
-          <div className='article' key={item.title}>
-            <a href={link}><h3>{item.title}</h3></a>
-            <div dangerouslySetInnerHTML={{ __html: story }} />
-            <div className='article-buttons'>
-              <Glyphicon style={bookmark} onClick={() => this.bookmark(item)} glyph='bookmark' />
-              {trash}
+          <div className='article-wrapper' key={item.title}>
+            <div className='article'>
+              <div className='article-content'>
+                <a href={link}><h3>{item.title}</h3></a>
+                <div dangerouslySetInnerHTML={{ __html: story }} />
+              </div>
+              <div className='article-footer'>
+                <div className='article-buttons'>
+                  <Glyphicon style={bookmark} onClick={() => this.bookmark(item)} glyph='bookmark' />
+                  {trash}
+                </div>
+                <p className='date'>{date}</p>
+              </div>
             </div>
-            <p>{item.pubdate || item.published}</p>
           </div>
         )
       }

@@ -4,7 +4,7 @@
   max-width: 950px;
 }
 
-.article {
+.article-wrapper {
   padding: 30px;
   margin-bottom: 15px;
   max-width: 900px;
@@ -14,7 +14,22 @@
   img {
     max-width: 100%;
     height: auto;
+    margin-bottom: 1em;
   }
+}
+
+.article {
+  max-width: 700px;
+}
+
+.article-content {
+  padding: 1em;
+}
+
+.article-footer {
+  margin-top: 1em;
+  padding: 1em;
+  border-top: 1px solid #d7d7d7;
 }
 
 .article-buttons {
@@ -24,8 +39,8 @@
 .article-buttons span {
   margin: 4px;
   font-size: 16px;
-  transition: all .2s ease-in-out;
-  text-shadow: -.5px 0 black, 0 .5px black, 1px 0 black, 0 -.5px black;
+  transition: all .1s ease-in-out;
+  text-shadow: 0 0 1px black;
 }
 
 .article-buttons span:hover {

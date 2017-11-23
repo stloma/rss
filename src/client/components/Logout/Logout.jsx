@@ -1,7 +1,7 @@
 /* globals fetch, window */
 
 import { Glyphicon } from 'react-bootstrap'
-
+import PropTypes from 'prop-types'
 import React from 'react'
 
 const Logout = () => {
@@ -13,19 +13,12 @@ const Logout = () => {
       credentials: 'include'
     }
     try {
-      const response = await fetch('/api/logout', fetchData)
-      if (response.status === 401) {
-        console.log('401')
-      } else if (response.status !== 200) {
-        console.log(`Error: ${response.status}`)
-      } else {
-        console.log('logged out')
-      }
-    } catch (error) { console.log(`logout failure: ${error}`) }
+      await fetch('/api/logout', fetchData)
+    } catch (error) { console.log(error) }
   }
 
   return (
-    <a onClick={logout} className='btn'><Glyphicon glyph='log-out' /> Logout</a>
+    <span onClick={logout} className='btn'><Glyphicon glyph='log-out' /> Logout</span>
   )
 }
 

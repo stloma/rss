@@ -10,7 +10,7 @@ export default class AddFeed extends React.Component {
     this.state = {
       username: '',
       open: false,
-      feed: { url: '' }
+      feed: { url: '', name: '' }
     }
   }
 
@@ -23,8 +23,7 @@ export default class AddFeed extends React.Component {
         credentials: 'include'
       })
       if (response.ok) {
-        this.props.loadFeeds()
-        this.props.addFeed()
+        window.location.reload()
       } else {
         const errors = await response.json()
         this.setState({ errors })
@@ -33,20 +32,27 @@ export default class AddFeed extends React.Component {
   }
 
   handleChange = (event) => {
-    if (typeof event === 'string') this.setState({ feed: { url: event } })
-    else {
-      const value = event.target
-      this.setState({ feed: { [value]: value } })
-    }
+    const name = event.target.name
+    const value = event.target.value
+
+    const { feed } = this.state
+    feed[name] = value
+
+    this.setState({ feed })
+  }
+
+  loadExample = (name, url) => {
+    this.setState({ feed: { url, name } })
   }
 
   handleSubmit = (event) => {
     event.preventDefault()
     const form = document.forms.FeedAdd
+    const { name, url } = this.state.feed
 
     this.createFeed({
-      name: form.name.value,
-      url: form.url.value,
+      name,
+      url,
       category: form.category.value
     })
   }
@@ -65,7 +71,7 @@ export default class AddFeed extends React.Component {
 
     const urlWrapper = url => (
       <span key={url.url}> {url.name}
-        <a onClick={() => this.handleChange(url.url)}>{url.url}</a>
+        <a onClick={() => this.loadExample(url.name, url.url)}>{url.url}</a>
       </span>
     )
 
@@ -97,9 +103,11 @@ export default class AddFeed extends React.Component {
                   <input
                     type='text'
                     className='form-control'
+                    required
                     name='name'
                     placeholder='Name'
-                    required
+                    onChange={this.handleChange}
+                    value={this.state.feed.name}
                   />
                   <label htmlFor='url' className='control-label'>Url</label>
                   <input

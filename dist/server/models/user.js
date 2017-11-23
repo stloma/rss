@@ -3,70 +3,73 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.validateRegistration = exports.CreateUser = exports.ComparePassword = undefined;
+exports.validateRegistration = exports.ChangePassword = exports.CreateUser = exports.ComparePassword = undefined;
 
 var _bcrypt = require('bcrypt');
 
 var _bcrypt2 = _interopRequireDefault(_bcrypt);
 
-var _db = require('./db.js');
+var _mongodb = require('mongodb');
+
+var _db = require('./db');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var ComparePassword = exports.ComparePassword = function ComparePassword(candidatePassword, hash, callback) {
-  _bcrypt2.default.compare(candidatePassword, hash, function (err, isMatch) {
-    if (err) throw err;
-    callback(isMatch);
-  });
+var ComparePassword = exports.ComparePassword = async function ComparePassword(candidatePassword, hash) {
+  try {
+    var isMatch = await _bcrypt2.default.compare(candidatePassword, hash);
+    return isMatch;
+  } catch (error) {
+    throw Error(error);
+  }
 };
 
-var CreateUser = exports.CreateUser = function CreateUser(newUser, cb) {
-  _bcrypt2.default.genSalt(10, function (err, salt) {
-    if (err) throw err;
-    _bcrypt2.default.hash(newUser.password, salt, function (err, hash) {
-      if (err) throw err;
-      newUser.password = hash;
-      insertUser(newUser);
-    });
-  });
+var CreateUser = exports.CreateUser = async function CreateUser(user) {
+  var newUser = user;
+  try {
+    var passHash = await _bcrypt2.default.hash(newUser.password, 10);
+    newUser.password = passHash;
+    var userExists = await _db.db.rssDb.collection('users').findOne({ username: newUser.username });
+    if (userExists) return 11000;
+    return await _db.db.rssDb.collection('users').insertOne(newUser);
+  } catch (error) {
+    throw Error(error);
+  }
+};
 
-  function insertUser(newUser) {
-    _db.bookmarkDb.collection('users').insertOne(newUser).then(function (result) {
-      return _db.bookmarkDb.collection('users').find({ _id: result.insertedId }).limit(1).next();
-    }).then(function (newUser) {
-      cb(null, newUser);
-    }).catch(function (error) {
-      cb(error);
-    });
+var ChangePassword = exports.ChangePassword = async function ChangePassword(userDb, password) {
+  try {
+    var passHash = await _bcrypt2.default.hash(password.password, 10);
+
+    await _db.db.rssDb.collection('users').updateOne({ _id: new _mongodb.ObjectId(userDb) }, { $set: { password: passHash } });
+  } catch (error) {
+    throw Error(error);
   }
 };
 
 var registerFieldType = {
-  name: 'required',
   username: 'required',
-  email: 'required',
   password: 'required',
   created: 'required'
 };
 
-function validateRegistration(site, cb) {
+function validateRegistration(site) {
   var errors = [];
   var emailPattern = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,3}$/;
-  for (var field in registerFieldType) {
+  Object.keys(registerFieldType).forEach(function (field) {
     var type = registerFieldType[field];
     if (type === 'required' && !site[field]) {
       errors.push(field + ' is required');
     }
-  }
-  var email = site['email'];
+  });
+  var email = site.email;
   if (email && !email.match(emailPattern)) {
     errors.push('Please enter a valid email address');
   }
   if (errors.length > 0) {
-    cb(errors);
-  } else {
-    cb(null);
+    return errors;
   }
+  return null;
 }
 
 exports.validateRegistration = validateRegistration;

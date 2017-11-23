@@ -4,15 +4,14 @@ import {
   getFeeds, addFeed, addCategory,
   deleteCategory, refreshArticles, createBookmark,
   markRead, deleteFeed
-} from '../models/db'
+} from '../models/feeds'
 
 const feeds = express.Router()
 
 // Start called by Router.jsx
 //
 feeds.get('/feeds', async (req, res) => {
-  // let userDb = req.session.passport.user
-  const userDb = 'user1'
+  const userDb = String(req.session.passport.user)
 
   try {
     const result = await getFeeds(userDb)
@@ -22,8 +21,7 @@ feeds.get('/feeds', async (req, res) => {
 
 feeds.post('/articles', async (req, res) => {
   const { name, url, category } = req.body
-  // let userDb = req.session.passport.user
-  const userDb = 'user1'
+  const userDb = String(req.session.passport.user)
 
   try {
     await refreshArticles(userDb, category, name, url)
@@ -38,7 +36,7 @@ feeds.post('/articles', async (req, res) => {
 //
 feeds.post('/editcategories', async (req, res) => {
   const { _id, name, toDelete } = req.body
-  const userDb = 'user1'
+  const userDb = String(req.session.passport.user)
 
   if (name) {
     try {
@@ -63,7 +61,7 @@ feeds.post('/editcategories', async (req, res) => {
 //
 feeds.post('/bookmark', async (req, res) => {
   const newBookmark = req.body
-  const userDb = 'user1'
+  const userDb = String(req.session.passport.user)
 
   try {
     const result = await createBookmark(userDb, newBookmark)
@@ -73,8 +71,8 @@ feeds.post('/bookmark', async (req, res) => {
 
 feeds.post('/read', async (req, res) => {
   // let userDb = req.session.passport.user
-  const userDb = 'user1'
   const { category, feed, title, link } = req.body
+  const userDb = String(req.session.passport.user)
 
   try {
     const result = await markRead(category, feed, title, link, userDb)
@@ -88,7 +86,7 @@ feeds.post('/read', async (req, res) => {
 //
 feeds.post('/feeds', async (req, res) => {
   // let userDb = req.session.passport.user
-  const userDb = 'user1'
+  const userDb = String(req.session.passport.user)
   const newFeed = req.body
 
   // addFeed('rssapp', newFeed, function (error, result) {
@@ -103,7 +101,7 @@ feeds.post('/feeds', async (req, res) => {
 })
 
 feeds.delete('/feeds', async (req, res) => {
-  const userDb = 'user1'
+  const userDb = String(req.session.passport.user)
   const { category, feed } = req.body
   const response = await deleteFeed(userDb, category, feed)
   res.status(200).json({ message: 'success' })
