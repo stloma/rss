@@ -208,7 +208,7 @@ class Container extends React.Component {
   }
 
   render() {
-    if (this.state.feeds.length === 0 || this.state.loggedIn === undefined) {
+    if (this.state.loggedIn === undefined) {
       return <div id='site-loader'><Loading id='side-loader' type='bars' height='65px' width='65px' /></div>
     }
     const MainWrapper = (content) => {
@@ -273,10 +273,6 @@ const PropsRoute = ({ component, ...rest }) => (
     render={routeProps => renderMergedProps(component, routeProps, rest)}
   />
 )
-
-PropsRoute.propTypes = {
-  component: PropTypes.object.isRequired
-}
 
 const Main = (props) => {
   const { feeds } = props
