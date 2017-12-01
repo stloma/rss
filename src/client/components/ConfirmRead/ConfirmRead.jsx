@@ -28,7 +28,7 @@ export default class ConfirmRead extends React.Component {
           <div className='container' id='add-feed'>
             <p>You are marking <b>{`${category}: ${feed}`}</b> as read.</p>
             <p>Are you sure?</p>
-            <button onClick={() => this.props.markRead({ confirm: false })} type='reset' className='btn btn-black'>
+            <button onClick={() => this.props.markRead({ confirm: false })} type='reset' className='btn btn-default'>
               Cancel
             </button>
             <button onClick={() => this.props.markRead({ confirm: true })} type='submit' className='btn btn-primary'>Submit</button>
